@@ -1,0 +1,131 @@
+/* Translucent frosted-glass header, site title, search, social links. */
+
+.page > .header {
+	background-color: var(--th-bg-glass);
+	-webkit-backdrop-filter: var(--th-glass-blur);
+	backdrop-filter: var(--th-glass-blur);
+	border-bottom: 1px solid var(--th-hairline);
+}
+
+/* Without backdrop-filter a translucent background hurts legibility: make it opaque. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.page > .header {
+		background-color: var(--th-bg);
+	}
+}
+
+/* Header layout: Starlight aligns search with the content column; center it on the page instead.
+   Symmetric side columns keep it centered whatever the title and icon widths. */
+@media (min-width: 50rem) {
+	.page > .header > .header {
+		grid-template-columns: minmax(0, 1fr) minmax(12rem, 20rem) minmax(0, 1fr);
+		gap: var(--th-space-6);
+	}
+
+	.page > .header > .header > .right-group {
+		justify-self: end;
+	}
+
+	.page > .header > .header site-search {
+		width: 100%;
+	}
+}
+
+/* Site title */
+.site-title {
+	gap: var(--th-space-2);
+	font-size: var(--th-text-lg);
+	font-weight: var(--th-weight-semibold);
+	letter-spacing: var(--th-tracking-heading);
+	color: var(--th-text);
+	border-radius: var(--th-radius-sm);
+}
+
+.site-title img {
+	height: 1.625rem;
+	width: auto;
+}
+
+/* Search button: plain rounded field with a neutral background. */
+site-search button[data-open-modal] {
+	color: var(--th-text-secondary);
+	font-size: var(--th-text-md);
+	letter-spacing: normal;
+}
+
+site-search button[data-open-modal] svg {
+	width: 1rem;
+	height: 1rem;
+}
+
+@media (min-width: 50rem) {
+	site-search button[data-open-modal] {
+		height: 2.125rem;
+		max-width: 20rem;
+		padding-inline: var(--th-space-3) var(--th-space-2);
+		border: 1px solid transparent;
+		border-radius: var(--th-radius-sm);
+		background-color: var(--th-fill-strong);
+		color: var(--th-text-secondary);
+	}
+
+	site-search button[data-open-modal]:hover {
+		border-color: transparent;
+		background-color: var(--th-fill-strong);
+		color: var(--th-text);
+		box-shadow: inset 0 0 0 1px var(--th-hairline);
+	}
+
+	site-search button[data-open-modal] > kbd {
+		gap: 0.125rem;
+		padding-inline: var(--th-space-1);
+		border: 0;
+		background: transparent;
+		color: var(--th-text-secondary);
+		font-size: var(--th-text-xs);
+	}
+
+	site-search button[data-open-modal] > kbd kbd {
+		font-family: var(--th-font-sans);
+	}
+}
+
+/* Social icons and divider */
+.social-icons::after {
+	border-inline-end-color: var(--th-hairline);
+	height: 1.25rem;
+}
+
+.social-icons a,
+.right-group a.sl-flex {
+	color: var(--th-text-secondary);
+	border-radius: var(--th-radius-sm);
+	padding: var(--th-space-1);
+	margin: calc(-1 * var(--th-space-1));
+}
+
+.social-icons a:hover {
+	color: var(--th-text);
+}
+
+.social-icons svg {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+/* Mobile menu button */
+.sl-menu-button {
+	background-color: transparent;
+	box-shadow: none;
+	border-radius: var(--th-radius-sm);
+	color: var(--th-text);
+}
+
+.sl-menu-button:hover {
+	background-color: var(--th-fill-strong);
+}
+
+.sl-menu-button:has(~ :popover-open) {
+	background-color: var(--th-fill-strong);
+	color: var(--th-text);
+}

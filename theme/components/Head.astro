@@ -1,0 +1,45 @@
+---
+/**
+ * Adds Inter loading to Starlight's <head>, off the critical rendering path.
+ *
+ * Declaring the font in CSS would make the first paint wait for it (~0.5 s on slow mobile
+ * connections). Instead, the first page of a visit paints with a fallback whose metrics are
+ * matched to Inter (see styles/fonts.css), and Inter swaps in once the page has loaded. Later
+ * pages find it in the HTTP cache and load it right away, so it is there before first paint.
+ * Without JavaScript, the fallback stack is used.
+ */
+import Default from '@astrojs/starlight/components/Head.astro';
+import fontUrl from '../fonts/inter-kiln.woff2?url';
+
+const font = {
+	url: fontUrl,
+	unicodeRange:
+		'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2190-2193, U+2197, U+2212, U+2215, U+2318, U+2325, U+21E7, U+FEFF, U+FFFD',
+};
+---
+
+<Default />
+<script is:inline define:vars={{ font }}>
+	(() => {
+		const key = 'kiln-font';
+		const load = () => {
+			const face = new FontFace('Inter Kiln', `url(${font.url}) format('woff2')`, {
+				weight: '400 700',
+				display: 'swap',
+				unicodeRange: font.unicodeRange,
+			});
+			document.fonts.add(face);
+			face.load().then(() => {
+				try {
+					sessionStorage.setItem(key, '1');
+				} catch {}
+			}, () => {});
+		};
+		let cached = false;
+		try {
+			cached = sessionStorage.getItem(key) === '1';
+		} catch {}
+		if (cached || document.readyState === 'complete') load();
+		else addEventListener('load', load, { once: true });
+	})();
+</script>

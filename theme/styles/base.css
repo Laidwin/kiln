@@ -1,0 +1,74 @@
+/* Base: text rendering, links, focus, selection, motion. */
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	scroll-padding-top: calc(var(--th-header-height) + var(--th-space-6));
+}
+
+body {
+	background-color: var(--th-bg);
+	color: var(--th-text);
+	font-family: var(--th-font-sans);
+	font-size: var(--th-text-base);
+	line-height: var(--th-leading-body);
+	letter-spacing: var(--th-tracking-body);
+	font-feature-settings: var(--th-font-features);
+	font-synthesis-weight: none;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+::selection {
+	background-color: var(--th-accent-tint-strong);
+}
+
+/* Focus: crisp ring, keyboard only. */
+:focus-visible {
+	outline: var(--th-focus-width) solid var(--th-accent-text);
+	outline-offset: var(--th-focus-offset);
+	border-radius: var(--th-radius-xs);
+}
+
+:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* Subtle color transitions on interactive elements. */
+a,
+button,
+summary,
+select,
+input {
+	transition:
+		color var(--th-duration-fast) var(--th-ease),
+		background-color var(--th-duration-fast) var(--th-ease),
+		border-color var(--th-duration-fast) var(--th-ease),
+		box-shadow var(--th-duration-fast) var(--th-ease),
+		opacity var(--th-duration-fast) var(--th-ease);
+}
+
+/* Skip link */
+.sl-skip-link,
+a[href='#_top'].sl-skip-link {
+	border-radius: var(--th-radius-sm);
+}
+
+/* Strictly honor the reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+}

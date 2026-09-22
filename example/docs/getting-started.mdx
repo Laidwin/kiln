@@ -1,0 +1,99 @@
+---
+title: Getting started
+description: From an empty folder to a published documentation site in five minutes.
+sidebar:
+  order: 1
+---
+
+import { FileTree, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Kiln needs **Docker** and nothing else: no Node, no npm, no Python packages. This guide adds documentation to an existing project, previews it locally and builds the static site.
+
+## Project layout
+
+Kiln only looks at two things at the root of your project: a `docs/` folder and a `docs.yml` file. The rest of the repo is yours.
+
+<Tabs syncKey="lang">
+	<TabItem label="Python" icon="seti:python">
+		<FileTree>
+		- **docs.yml**
+		- **docs/**
+		  - index.md
+		- src/
+		  - my_package/
+		- pyproject.toml
+		</FileTree>
+	</TabItem>
+	<TabItem label="Java" icon="seti:java">
+		<FileTree>
+		- **docs.yml**
+		- **docs/**
+		  - index.md
+		- src/
+		  - main/java/
+		- pom.xml
+		</FileTree>
+	</TabItem>
+	<TabItem label="C#" icon="seti:c-sharp">
+		<FileTree>
+		- **docs.yml**
+		- **docs/**
+		  - index.md
+		- src/
+		  - MyLibrary/
+		- MyLibrary.sln
+		</FileTree>
+	</TabItem>
+</Tabs>
+
+## Create your docs
+
+<Steps>
+
+1. **Describe the site** in `docs.yml`. Only `title` is required:
+
+   ```yaml title="docs.yml"
+   title: My project
+   description: What my project does, in one sentence.
+   ```
+
+2. **Write a first page** in `docs/index.md`:
+
+   ```md title="docs/index.md"
+   ---
+   title: Welcome
+   description: The home page of my documentation.
+   ---
+
+   Hello from **Kiln**!
+   ```
+
+3. **Preview it** with live reload on [localhost:4321](http://localhost:4321):
+
+   ```sh
+   docker run --rm -p 4321:4321 -v "$PWD":/project ghcr.io/laidwin/kiln serve
+   ```
+
+   Every change to a Markdown file reloads the page. Changes to `docs.yml` or new folders update the navigation too.
+
+4. **Build the static site** into `site/`:
+
+   ```sh
+   docker run --rm -v "$PWD":/project ghcr.io/laidwin/kiln build
+   ```
+
+</Steps>
+
+:::tip[Add site/ to .gitignore]
+The build output is regenerated on every run and does not belong in version control.
+:::
+
+:::note[Windows]
+In PowerShell, replace `"$PWD"` with `"${PWD}"`. File watching uses polling, so live reload works with folders mounted from Windows and macOS hosts.
+:::
+
+## What's next?
+
+1. Learn the Markdown features in [Writing content](/guides/writing-content/).
+2. [Publish to GitHub Pages](/guides/publishing/) on every push.
+3. Browse every option in the [configuration reference](/reference/configuration/).

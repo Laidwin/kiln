@@ -1,0 +1,56 @@
+# Composite action: run Kiln in any workflow, for hosts other than GitHub Pages or custom pipelines.
+#
+#   - uses: Laidwin/kiln@v1
+#     with:
+#       working-directory: docs-site
+#       base: /docs
+#
+# For GitHub Pages, prefer the reusable workflow (.github/workflows/pages.yml), which also deploys.
+name: Kiln
+description: Build a static documentation site from docs.yml and docs/ with the Kiln Docker image.
+author: Laidwin
+branding:
+  icon: book-open
+  color: orange
+
+inputs:
+  working-directory:
+    description: Folder containing docs.yml and docs/, relative to the workspace.
+    default: .
+  command:
+    description: Kiln command to run, "build" or "validate".
+    default: build
+  image:
+    description: Kiln image to use.
+    default: ghcr.io/laidwin/kiln:v1
+  base:
+    description: Base path the site is served from (e.g. /my-project), when docs.yml does not set one.
+    default: ''
+  site:
+    description: Public URL of the site (e.g. https://docs.example.com), when docs.yml does not set one.
+    default: ''
+
+outputs:
+  site-path:
+    description: Path of the generated site, relative to the workspace.
+    value: ${{ steps.kiln.outputs.site-path }}
+
+runs:
+  using: composite
+  steps:
+    - id: kiln
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        COMMAND: ${{ inputs.command }}
+        IMAGE: ${{ inputs.image }}
+        KILN_BASE: ${{ inputs.base }}
+        KILN_SITE: ${{ inputs.site }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        case "$COMMAND" in build|validate) ;; *) echo "::error::Unsupported command \"$COMMAND\" (expected build or validate)"; exit 1 ;; esac
+        args=()
+        [ -n "$KILN_BASE" ] && args+=(-e KILN_BASE)
+        [ -n "$KILN_SITE" ] && args+=(-e KILN_SITE)
+        docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/project "${args[@]}" "$IMAGE" "$COMMAND"
+        echo "site-path=${WORKDIR%/}/site" >> "$GITHUB_OUTPUT"

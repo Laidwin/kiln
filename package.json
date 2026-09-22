@@ -1,0 +1,17 @@
+{
+  "name": "kiln",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "theme",
+    "runner"
+  ],
+  "scripts": {
+    "build:example": "node runner/cli.mjs build --project example",
+    "serve:example": "node runner/cli.mjs serve --project example",
+    "validate:example": "node runner/cli.mjs validate --project example"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

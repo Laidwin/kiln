@@ -1,0 +1,52 @@
+/* Code: inline code and tweaks around Expressive Code blocks. */
+
+.sl-markdown-content :not(pre) > code:not(:where(.not-content *)) {
+	padding: 0.125em 0.375em;
+	border-radius: 0.3125rem;
+	background-color: var(--th-inline-code-bg);
+	color: var(--th-text);
+	font-family: var(--th-font-mono);
+	font-size: 0.85em;
+	letter-spacing: 0;
+	overflow-wrap: anywhere;
+}
+
+.sl-markdown-content a > code:not(:where(.not-content *)) {
+	color: inherit;
+}
+
+.sl-markdown-content .expressive-code {
+	margin-block: var(--th-space-6);
+}
+
+/* File title: discreet UI typography. */
+.expressive-code .frame .header .title {
+	letter-spacing: 0;
+}
+
+.expressive-code .frame.has-title:not(.is-terminal) .header {
+	border-bottom: 1px solid var(--th-hairline);
+}
+
+/* Copy button: hidden until the block is hovered (always visible for keyboard and touch). */
+.expressive-code .copy button {
+	border-radius: var(--th-radius-sm) !important;
+	backdrop-filter: blur(8px);
+}
+
+@media (hover: hover) {
+	.expressive-code .frame .copy button {
+		opacity: 0;
+		transition: opacity var(--th-duration) var(--th-ease);
+	}
+
+	.expressive-code .frame:hover .copy button,
+	.expressive-code .frame .copy button:focus-visible {
+		opacity: 1;
+	}
+}
+
+/* Code inside tabs needs no extra margin. */
+starlight-tabs .expressive-code {
+	margin-block: var(--th-space-3) 0;
+}

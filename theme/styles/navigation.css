@@ -1,0 +1,291 @@
+/* Navigation: left sidebar, table of contents (desktop and mobile), pagination. */
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+
+@media (min-width: 50rem) {
+	.sidebar-pane {
+		background-color: var(--th-bg);
+		border-inline-end: 1px solid var(--th-hairline);
+	}
+}
+
+.sidebar-content {
+	padding-top: var(--th-space-5);
+	gap: var(--th-space-4);
+}
+
+.sidebar-content ul {
+	--sl-sidebar-item-padding-inline: var(--th-space-3);
+}
+
+.sidebar-content .top-level > li + li {
+	margin-top: var(--th-space-1);
+}
+
+.sidebar-content .top-level > li:has(> details) {
+	margin-top: var(--th-space-5);
+}
+
+/* Links */
+.sidebar-content a {
+	padding: 0.375rem var(--th-space-3);
+	border-radius: var(--th-radius-sm);
+	color: var(--th-text-secondary);
+	font-size: var(--th-text-md);
+	line-height: 1.35;
+	letter-spacing: -0.006em;
+}
+
+.sidebar-content a.large {
+	font-size: var(--th-text-md);
+	font-weight: var(--th-weight-regular);
+	color: var(--th-text-secondary);
+}
+
+.sidebar-content a:hover {
+	color: var(--th-text);
+	background-color: var(--th-fill);
+}
+
+.sidebar-content a:focus-visible {
+	outline-offset: -2px;
+}
+
+/* Current page (theme signature): tinted background and a thin accent bar on the leading edge. */
+.sidebar-content [aria-current='page'],
+.sidebar-content [aria-current='page']:hover,
+.sidebar-content [aria-current='page']:focus {
+	color: var(--th-accent-text);
+	background-color: var(--th-accent-tint);
+	box-shadow: inset 3px 0 0 var(--th-accent-fill);
+	font-weight: var(--th-weight-medium);
+}
+
+[dir='rtl'] .sidebar-content [aria-current='page'] {
+	box-shadow: inset -3px 0 0 var(--th-accent-fill);
+}
+
+/* Groups: discreet title, no heavy caret. */
+.sidebar-content summary {
+	min-height: 2rem;
+	padding: var(--th-space-1) var(--th-space-3);
+	margin-bottom: var(--th-space-1);
+	border-radius: var(--th-radius-sm);
+}
+
+.sidebar-content summary:hover .group-label .large {
+	color: var(--th-text);
+}
+
+.sidebar-content summary .large {
+	font-size: var(--th-text-sm);
+	font-weight: var(--th-weight-semibold);
+	color: var(--th-text);
+	letter-spacing: 0;
+}
+
+.sidebar-content summary .caret {
+	width: 0.875rem;
+	height: 0.875rem;
+	color: var(--th-text-tertiary);
+	transition: transform var(--th-duration) var(--th-ease-out);
+}
+
+/* Sub-lists: no vertical line, just an indent. */
+.sidebar-content ul ul li {
+	margin-inline-start: 0;
+	border-inline-start: 0;
+	padding-inline-start: 0;
+}
+
+.sidebar-content ul ul ul {
+	margin-inline-start: var(--th-space-3);
+}
+
+/* Link to the API reference: discreet but recognizable. */
+.sidebar-content a[data-api-link] {
+	margin-top: var(--th-space-4);
+	border-top: 1px solid var(--th-hairline);
+	border-radius: 0 0 var(--th-radius-sm) var(--th-radius-sm);
+	padding-top: var(--th-space-3);
+	color: var(--th-text);
+	font-weight: var(--th-weight-medium);
+}
+
+.sidebar-content a[data-api-link]::after {
+	content: ' ↗';
+	color: var(--th-text-tertiary);
+}
+
+/* Mobile sidebar footer (theme, social) */
+.mobile-preferences {
+	border-top-color: var(--th-hairline) !important;
+}
+
+/* ── Table of contents (desktop) ───────────────────────────────────────────── */
+
+@media (min-width: 72rem) {
+	.right-sidebar {
+		border-inline-start: 0;
+	}
+}
+
+.right-sidebar-panel {
+	padding-top: var(--th-space-8);
+}
+
+.right-sidebar-panel h2 {
+	font-size: var(--th-text-sm);
+	font-weight: var(--th-weight-semibold);
+	color: var(--th-text);
+	letter-spacing: 0;
+	margin-bottom: var(--th-space-3);
+}
+
+starlight-toc ul {
+	position: relative;
+	border-inline-start: 1px solid var(--th-hairline);
+}
+
+starlight-toc ul ul {
+	border: 0;
+}
+
+starlight-toc a {
+	position: relative;
+	padding-block: 0.3125rem;
+	padding-inline-start: calc(var(--th-space-3) + var(--depth, 0) * var(--th-space-3)) !important;
+	font-size: var(--th-text-sm) !important;
+	line-height: 1.4;
+	color: var(--th-text-secondary) !important;
+	border-radius: 0;
+}
+
+starlight-toc a:hover {
+	color: var(--th-text) !important;
+}
+
+/* Active section tracking: thin accent line sliding along the rail. */
+starlight-toc a::before {
+	content: '';
+	position: absolute;
+	inset-block: 0.25rem;
+	inset-inline-start: -1px;
+	width: 2px;
+	border-radius: 2px;
+	background-color: var(--th-accent);
+	opacity: 0;
+	transform: scaleY(0.4);
+	transition:
+		opacity var(--th-duration) var(--th-ease),
+		transform var(--th-duration) var(--th-ease-out);
+}
+
+starlight-toc a[aria-current='true'] {
+	color: var(--th-text) !important;
+	font-weight: var(--th-weight-medium);
+}
+
+starlight-toc a[aria-current='true']::before {
+	opacity: 1;
+	transform: none;
+}
+
+starlight-toc a:focus-visible {
+	outline-offset: -2px;
+	border-radius: var(--th-radius-xs);
+}
+
+/* ── Table of contents (mobile) ────────────────────────────────────────────── */
+
+mobile-starlight-toc nav {
+	background-color: var(--th-bg-glass);
+	-webkit-backdrop-filter: var(--th-glass-blur);
+	backdrop-filter: var(--th-glass-blur);
+	border-top: 0;
+}
+
+mobile-starlight-toc summary {
+	border-bottom-color: var(--th-hairline);
+	font-size: var(--th-text-sm);
+	padding-inline: var(--th-space-4);
+}
+
+mobile-starlight-toc .toggle {
+	border: 0;
+	border-radius: var(--th-radius-pill);
+	background-color: var(--th-fill-strong);
+	padding-inline: var(--th-space-3) var(--th-space-2);
+	padding-block: 0.375rem;
+	color: var(--th-text);
+	font-weight: var(--th-weight-medium);
+}
+
+mobile-starlight-toc details[open] .toggle,
+mobile-starlight-toc details .toggle:hover {
+	border-color: transparent;
+	background-color: var(--th-fill-strong);
+}
+
+mobile-starlight-toc .display-current {
+	color: var(--th-text-secondary);
+}
+
+mobile-starlight-toc .dropdown {
+	border: 0;
+	border-bottom: 1px solid var(--th-hairline);
+	background-color: var(--th-bg-elevated);
+	box-shadow: var(--th-shadow-md);
+	padding-block: var(--th-space-2);
+}
+
+mobile-starlight-toc .dropdown a {
+	padding-inline-start: calc(var(--th-space-4) + var(--depth, 0) * var(--th-space-3)) !important;
+	border: 0 !important;
+	font-size: var(--th-text-md);
+	color: var(--th-text-secondary);
+}
+
+mobile-starlight-toc .dropdown a[aria-current='true'] {
+	color: var(--th-accent-text);
+	font-weight: var(--th-weight-medium);
+}
+
+/* ── Pagination (previous / next) ──────────────────────────────────────────── */
+
+.pagination-links {
+	gap: var(--th-space-4);
+	margin-top: var(--th-space-8);
+}
+
+.pagination-links > a {
+	padding: var(--th-space-4) var(--th-space-5);
+	border: 1px solid var(--th-hairline);
+	border-radius: var(--th-radius-md);
+	box-shadow: none;
+	color: var(--th-text-secondary);
+	font-size: var(--th-text-sm);
+	line-height: 1.4;
+	transition:
+		border-color var(--th-duration) var(--th-ease),
+		background-color var(--th-duration) var(--th-ease);
+}
+
+.pagination-links > a:hover {
+	border-color: var(--th-hairline-strong);
+	background-color: var(--th-fill);
+}
+
+.pagination-links > a svg {
+	color: var(--th-text-tertiary);
+	width: 1.125rem;
+	height: 1.125rem;
+}
+
+.pagination-links .link-title {
+	margin-top: var(--th-space-1);
+	color: var(--th-accent-text);
+	font-size: var(--th-text-base);
+	font-weight: var(--th-weight-medium);
+	letter-spacing: var(--th-tracking-body);
+}

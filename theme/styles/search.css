@@ -1,0 +1,240 @@
+/* Pagefind search in a centered modal, command-palette style. */
+
+site-search dialog {
+	border: 0;
+	background-color: var(--th-bg-glass);
+	-webkit-backdrop-filter: saturate(180%) blur(30px);
+	backdrop-filter: saturate(180%) blur(30px);
+	color: var(--th-text);
+	box-shadow: var(--th-shadow-lg);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	site-search dialog {
+		background-color: var(--th-bg-elevated);
+	}
+}
+
+site-search dialog::backdrop {
+	background-color: var(--th-backdrop);
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+}
+
+@media (min-width: 50rem) {
+	site-search dialog {
+		margin-top: 12vh;
+		max-width: 42rem;
+		min-height: 0;
+		max-height: min(34rem, 76vh);
+		border-radius: var(--th-radius-lg);
+		box-shadow: var(--th-shadow-lg), inset 0 0 0 0.5px var(--th-hairline);
+	}
+
+	site-search .dialog-frame {
+		padding: var(--th-space-3) var(--th-space-3) var(--th-space-2);
+	}
+}
+
+/* Gentle entrance */
+@media (prefers-reduced-motion: no-preference) {
+	site-search dialog[open] {
+		animation: th-palette-in var(--th-duration) var(--th-ease-out);
+	}
+
+	site-search dialog[open]::backdrop {
+		animation: th-fade-in var(--th-duration) var(--th-ease);
+	}
+}
+
+@keyframes th-palette-in {
+	from {
+		opacity: 0;
+		transform: scale(0.98) translateY(-6px);
+	}
+}
+
+@keyframes th-fade-in {
+	from {
+		opacity: 0;
+	}
+}
+
+site-search button[data-close-modal] {
+	color: var(--th-accent-text);
+	font-size: var(--th-text-base);
+}
+
+/* ── Pagefind UI ───────────────────────────────────────────────────────────── */
+
+#starlight__search {
+	--pagefind-ui-scale: 1;
+	--pagefind-ui-primary: var(--th-accent-text);
+	--pagefind-ui-text: var(--th-text);
+	--pagefind-ui-background: transparent;
+	--pagefind-ui-border: var(--th-hairline);
+	--pagefind-ui-tag: var(--th-fill-strong);
+	--pagefind-ui-border-width: 0px;
+	--pagefind-ui-border-radius: var(--th-radius-md);
+	--pagefind-ui-font: var(--th-font-sans);
+}
+
+#starlight__search .pagefind-ui__form::before {
+	background-color: var(--th-text-secondary);
+	width: 20px;
+	height: 20px;
+	top: 21px;
+	left: 16px;
+	opacity: 1;
+}
+
+#starlight__search .pagefind-ui__search-input {
+	height: 3.5rem;
+	padding-inline: 3rem var(--th-space-12);
+	border: 0;
+	border-radius: var(--th-radius-md);
+	background-color: transparent;
+	color: var(--th-text);
+	font-size: 1.375rem;
+	font-weight: var(--th-weight-regular);
+	letter-spacing: -0.015em;
+}
+
+#starlight__search .pagefind-ui__search-input::placeholder {
+	color: var(--th-text-secondary);
+	opacity: 1;
+}
+
+#starlight__search .pagefind-ui__search-input:focus {
+	outline: none;
+}
+
+#starlight__search .pagefind-ui__form:focus-within {
+	box-shadow: none;
+}
+
+#starlight__search .pagefind-ui__search-clear {
+	top: 13px;
+	right: 10px;
+	height: 30px;
+	padding: 0 var(--th-space-3);
+	border-radius: var(--th-radius-pill);
+	background-color: var(--th-fill-strong);
+	color: var(--th-text-secondary);
+	font-size: var(--th-text-sm);
+}
+
+#starlight__search .pagefind-ui__search-clear:hover {
+	color: var(--th-text);
+}
+
+#starlight__search .pagefind-ui__drawer {
+	margin-top: var(--th-space-2);
+	padding-top: var(--th-space-2);
+	border-top: 1px solid var(--th-hairline);
+	gap: 0;
+}
+
+#starlight__search .pagefind-ui__message {
+	padding: var(--th-space-2) var(--th-space-3);
+	height: auto;
+	color: var(--th-text-secondary);
+	font-size: var(--th-text-sm);
+	font-weight: var(--th-weight-medium);
+}
+
+#starlight__search {
+	--sl-search-result-spacing: var(--th-space-1);
+	--sl-search-result-pad-inline-start: 2.75rem;
+	--sl-search-result-pad-inline-end: var(--th-space-3);
+	--sl-search-result-pad-block: 0.625rem;
+	--sl-search-result-nested-pad-block: 0.5rem;
+	--sl-search-page-icon-size: 1.125rem;
+	--sl-search-page-icon-inline-start: 0.875rem;
+}
+
+#starlight__search .pagefind-ui__results {
+	padding: 0;
+}
+
+#starlight__search .pagefind-ui__result-inner {
+	gap: 0;
+}
+
+/* Each row (page or section): transparent, rounded, fully highlighted on hover / focus. */
+#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)),
+#starlight__search .pagefind-ui__result-nested {
+	border-radius: var(--th-radius-sm) !important;
+	background-color: transparent;
+	outline: none !important;
+}
+
+#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):is(:hover, :focus-within),
+#starlight__search .pagefind-ui__result-nested:is(:hover, :focus-within) {
+	background-color: var(--th-accent-fill);
+}
+
+#starlight__search :is(.pagefind-ui__result-title, .pagefind-ui__result-nested):is(:hover, :focus-within) :is(.pagefind-ui__result-link, .pagefind-ui__result-excerpt, mark) {
+	color: var(--th-accent-on-fill);
+}
+
+#starlight__search .pagefind-ui__result-title:is(:hover, :focus-within)::before {
+	background: var(--th-accent-on-fill) !important;
+}
+
+#starlight__search .pagefind-ui__result-inner > .pagefind-ui__result-title::before {
+	background: var(--th-text-secondary);
+	-webkit-mask-size: contain;
+	mask-size: contain;
+}
+
+#starlight__search .pagefind-ui__result-link {
+	color: var(--th-text);
+	font-size: var(--th-text-base);
+	font-weight: var(--th-weight-medium);
+	text-decoration: none;
+	outline: none;
+}
+
+#starlight__search .pagefind-ui__result-nested {
+	padding-inline-start: var(--sl-search-result-pad-inline-start);
+}
+
+/* No tree diagram: a simple indent is enough. */
+#starlight__search .pagefind-ui__result-nested::before {
+	content: none;
+}
+
+#starlight__search .pagefind-ui__result-nested .pagefind-ui__result-link {
+	color: var(--th-text);
+	font-size: var(--th-text-md);
+}
+
+#starlight__search .pagefind-ui__result-excerpt {
+	margin-top: 0.125rem;
+	color: var(--th-text-secondary);
+	font-size: var(--th-text-sm);
+	line-height: 1.45;
+}
+
+#starlight__search mark {
+	background: transparent;
+	color: var(--th-text);
+	font-weight: var(--th-weight-semibold);
+}
+
+#starlight__search .pagefind-ui__button {
+	margin-top: var(--th-space-2);
+	height: 2.5rem;
+	border: 0;
+	border-radius: var(--th-radius-sm);
+	background-color: var(--th-fill-strong);
+	color: var(--th-text);
+	font-size: var(--th-text-md);
+	font-weight: var(--th-weight-medium);
+}
+
+#starlight__search .pagefind-ui__button:hover {
+	background-color: var(--th-accent-tint);
+	color: var(--th-accent-text);
+}

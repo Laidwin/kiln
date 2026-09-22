@@ -1,0 +1,123 @@
+---
+title: Code blocks
+description: Multi-language examples, file titles, highlighted lines and diffs.
+sidebar:
+  order: 2
+---
+
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+
+Code blocks are highlighted by [Expressive Code](https://expressive-code.com/) and come with a copy button. More than 200 languages are supported out of the box; an unknown language falls back to plain text instead of failing the build.
+
+## One example per language
+
+Synced tabs keep the same language from one block to the next: pick **Java** here and every other tab set with the same `syncKey` on the page follows.
+
+<Tabs syncKey="lang">
+	<TabItem label="Python" icon="seti:python">
+		```python title="slugify.py"
+		import re
+		import unicodedata
+
+
+		def slugify(title: str) -> str:
+		    """Turn a page title into a URL-friendly slug."""
+		    ascii_title = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+		    return re.sub(r"[^a-z0-9]+", "-", ascii_title.lower()).strip("-")
+
+
+		assert slugify("Getting Started!") == "getting-started"
+		```
+	</TabItem>
+	<TabItem label="Java" icon="seti:java">
+		```java title="Slugify.java"
+		import java.text.Normalizer;
+
+		public final class Slugify {
+
+		    /** Turns a page title into a URL-friendly slug. */
+		    public static String slugify(String title) {
+		        var ascii = Normalizer.normalize(title, Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
+		        return ascii.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+		    }
+
+		    public static void main(String[] args) {
+		        assert slugify("Getting Started!").equals("getting-started");
+		    }
+		}
+		```
+	</TabItem>
+	<TabItem label="C#" icon="seti:c-sharp">
+		```csharp title="Slugify.cs"
+		using System.Globalization;
+		using System.Text;
+		using System.Text.RegularExpressions;
+
+		public static class Slugify
+		{
+		    /// <summary>Turns a page title into a URL-friendly slug.</summary>
+		    public static string From(string title)
+		    {
+		        var ascii = new string(title.Normalize(NormalizationForm.FormD)
+		            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+		            .ToArray());
+		        return Regex.Replace(ascii.ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+		    }
+		}
+		```
+	</TabItem>
+</Tabs>
+
+## Highlighting
+
+Mark lines with `{2-3}`, and insertions or deletions with `ins` and `del`:
+
+```yaml title="docs.yml" {1} ins={4} del={3}
+title: My project
+description: What my project does, in one sentence.
+accent: "#0ea5e9"
+accent: "#f76b15"
+locale: en
+```
+
+## Diff
+
+```diff lang="yaml"
+ title: My project
+-locale: fr
++locale: en
++base: /my-project
+```
+
+## Terminal
+
+```sh
+$ docker run --rm -v "$PWD":/project ghcr.io/laidwin/kiln build
+kiln › Building "My project" (base /)
+kiln › Site written to /project/site
+```
+
+```powershell title="PowerShell"
+PS> docker run --rm -p 4321:4321 -v "${PWD}:/project" ghcr.io/laidwin/kiln serve
+```
+
+## Configuration files
+
+```json title="package.json"
+{
+  "name": "my-project",
+  "private": true
+}
+```
+
+```toml title="pyproject.toml"
+[project]
+name = "my-project"
+version = "1.0.0"
+```
+
+## The `<Code>` component
+
+For generated or imported code, use the `<Code>` component in an MDX page:
+
+<Code code={`SELECT slug, title, updated_at\nFROM pages\nWHERE draft = false\nORDER BY updated_at DESC;`} lang="sql" title="recent-pages.sql" />

@@ -1,0 +1,56 @@
+---
+title: Kiln
+description: Fire your Markdown into a documentation site. Any language, one container, zero Node in your repo.
+template: splash
+hero:
+  title: Markdown in. Docs out.
+  tagline: "Kiln turns a docs/ folder and a docs.yml file into a fast, accessible, carefully designed site. Python, Java, .NET or anything else: your project never needs Node."
+  actions:
+    - text: Get started
+      link: getting-started/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/Laidwin/kiln
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard, Steps } from '@astrojs/starlight/components';
+
+<CardGrid>
+	<Card title="Any language" icon="puzzle">
+		Kiln only reads Markdown. Your project can be Python, Java, C#, Rust or Go: the docs toolchain lives in a container, not in your repo.
+	</Card>
+	<Card title="One file of config" icon="setting">
+		A short `docs.yml`, validated at startup with line-accurate errors. You never touch an Astro config.
+	</Card>
+	<Card title="A crafted theme" icon="star">
+		Light and dark modes, Inter typography, a single accent color you choose. WCAG AA contrast and Lighthouse scores of 95+.
+	</Card>
+	<Card title="Batteries included" icon="rocket">
+		Full-text search, syntax highlighting for 200+ languages, tabs, asides, diagrams, and a slot for your generated API reference.
+	</Card>
+</CardGrid>
+
+## How it works
+
+<Steps>
+
+1. **Write** Markdown in a `docs/` folder and describe your site in `docs.yml`.
+
+2. **Preview** with live reload:
+
+   ```sh
+   docker run --rm -p 4321:4321 -v "$PWD":/project ghcr.io/laidwin/kiln serve
+   ```
+
+3. **Publish** to GitHub Pages with a few lines of workflow YAML.
+
+</Steps>
+
+## Go further
+
+<CardGrid>
+	<LinkCard title="Getting started" description="From an empty folder to a published site in five minutes." href="getting-started/" />
+	<LinkCard title="Configuration" description="Every docs.yml option, with examples." href="reference/configuration/" />
+</CardGrid>

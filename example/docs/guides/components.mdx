@@ -1,0 +1,97 @@
+---
+title: Components
+description: Asides, tabs, steps, cards, badges, buttons and file trees.
+sidebar:
+  order: 3
+  badge:
+    text: New
+    variant: tip
+---
+
+import { Aside, Badge, Card, CardGrid, FileTree, LinkButton, LinkCard, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Asides work in any Markdown file. The other components need an `.mdx` page and an `import` line at the top:
+
+```mdx
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+```
+
+## Asides
+
+:::note
+A **note** adds complementary information, useful but not essential.
+:::
+
+:::tip[Good to know]
+A **tip** helps readers get more out of your project. The title can be customized.
+:::
+
+:::caution
+A **caution** flags surprising behavior or a common pitfall.
+:::
+
+:::danger
+A **danger** warns about a destructive or irreversible action, such as `rm -rf site/`.
+:::
+
+<Aside type="note" title="Also as a component">
+Asides are also available as the `<Aside>` component in MDX files.
+</Aside>
+
+## Tabs
+
+<Tabs>
+	<TabItem label="macOS">Install Docker Desktop with `brew install --cask docker`.</TabItem>
+	<TabItem label="Windows">Install Docker Desktop with `winget install Docker.DockerDesktop`.</TabItem>
+	<TabItem label="Linux">Install Docker Engine with `curl -fsSL https://get.docker.com | sh`.</TabItem>
+</Tabs>
+
+## Steps
+
+<Steps>
+
+1. Create a `docs.yml` file at the project root.
+2. Write your pages in `docs/`.
+3. Run `kiln serve` through Docker.
+
+</Steps>
+
+## Cards
+
+<CardGrid>
+	<Card title="Fast" icon="rocket">A static site, prerendered and served from any CDN.</Card>
+	<Card title="Accessible" icon="approve-check-circle">WCAG AA contrast, full keyboard navigation, visible focus.</Card>
+</CardGrid>
+
+<LinkCard title="Configuration reference" description="Every docs.yml option." href="/reference/configuration/" />
+
+## Badges and buttons
+
+<Badge text="Stable" variant="success" /> <Badge text="Beta" variant="caution" /> <Badge text="Deprecated" variant="danger" /> <Badge text="v1.0" variant="note" />
+
+<LinkButton href="/getting-started/" icon="right-arrow">Get started</LinkButton> <LinkButton href="https://github.com/Laidwin/kiln" variant="secondary" icon="external">GitHub</LinkButton>
+
+## File tree
+
+<FileTree>
+- docs.yml
+- docs/
+  - index.md
+  - getting-started.md
+  - guides/
+    - **writing-content.md** this page's sibling
+    - components.mdx
+  - assets/
+    - logo.svg
+- api/ optional, pre-generated reference
+- src/
+</FileTree>
+
+## Collapsible details
+
+<details>
+<summary>Why does Kiln run in a container?</summary>
+
+So that no project needs Node, npm or a pinned Astro version. The container ships the exact toolchain and theme, and every project gets the same result on every machine and in CI.
+
+</details>

@@ -1,0 +1,12 @@
+/*
+ * Fallback for Inter with matched metrics, so text barely moves when Inter swaps in.
+ * Inter itself is loaded by components/Head.astro (trimmed subset built by fonts/build.sh).
+ */
+@font-face {
+	font-family: 'Inter Kiln Fallback';
+	src: local('Arial'), local('Helvetica Neue'), local('Helvetica');
+	ascent-override: 90.49%;
+	descent-override: 22.56%;
+	line-gap-override: 0%;
+	size-adjust: 107.06%;
+}

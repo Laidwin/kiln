@@ -1,0 +1,93 @@
+# Reusable workflow: build a project's docs with Kiln and deploy them to GitHub Pages.
+#
+#   jobs:
+#     docs:
+#       uses: Laidwin/kiln/.github/workflows/pages.yml@v1
+#
+# The caller must grant `contents: read`, `pages: write` and `id-token: write`,
+# and the repository's Pages source must be set to "GitHub Actions".
+name: Kiln · GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: Folder containing docs.yml and docs/, relative to the repository root.
+        type: string
+        default: .
+      image:
+        description: Kiln image to build with. Pin a version (e.g. ghcr.io/laidwin/kiln:v1.2.3) for reproducible builds.
+        type: string
+        default: ghcr.io/laidwin/kiln:v1
+      api-artifact:
+        description: Name of an artifact from an earlier job holding a pre-generated API reference, published under /api/.
+        type: string
+        default: ''
+    outputs:
+      page-url:
+        description: URL of the deployed site.
+        value: ${{ jobs.deploy.outputs.page-url }}
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download API reference
+        if: inputs.api-artifact != ''
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.api-artifact }}
+          path: ${{ inputs.working-directory }}/api
+
+      # Gives the URL Pages will serve the site from: /<repo> for project sites, / for user sites and custom domains.
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Build with Kiln
+        env:
+          IMAGE: ${{ inputs.image }}
+          # docs.yml `base` and `site` take precedence over these.
+          KILN_BASE: ${{ steps.pages.outputs.base_path || '/' }}
+          KILN_SITE: ${{ steps.pages.outputs.origin }}
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD":/project -e KILN_BASE -e KILN_SITE \
+            "$IMAGE" build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ inputs.working-directory }}/site
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    # Never cancel a deployment halfway; queue the next one instead.
+    concurrency:
+      group: pages-${{ github.repository }}
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page-url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

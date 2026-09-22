@@ -1,0 +1,59 @@
+---
+title: Publishing
+description: Publish your documentation to GitHub Pages on every push.
+sidebar:
+  order: 6
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Kiln ships a reusable GitHub Actions workflow that builds your site with the Kiln image and deploys it to GitHub Pages.
+
+<Steps>
+
+1. In your repository, open **Settings → Pages** and set **Source** to **GitHub Actions**.
+
+2. Add this workflow:
+
+   ```yaml title=".github/workflows/docs.yml"
+   name: Docs
+
+   on:
+     push:
+       branches: [main]
+     workflow_dispatch:
+
+   permissions:
+     contents: read
+     pages: write
+     id-token: write
+
+   jobs:
+     docs:
+       uses: Laidwin/kiln/.github/workflows/pages.yml@v1
+   ```
+
+3. Push. The site is published at `https://<owner>.github.io/<repo>/`.
+
+</Steps>
+
+## Base path
+
+GitHub Pages serves project sites under `/<repo>/`. When `docs.yml` has no `base`, the workflow derives it from the repository name, so internal links work without any configuration. Set `base` explicitly for a custom domain:
+
+```yaml title="docs.yml"
+base: /
+site: https://docs.example.com
+```
+
+## Versions
+
+`@v1` follows every compatible release of Kiln. Pin `@v1.2` to receive only patches, or `@v1.2.3` for a fully reproducible build.
+
+## Other hosts
+
+`kiln build` writes a plain static site into `site/`. Any static host works: Netlify, Cloudflare Pages, S3, nginx…
+
+```sh
+docker run --rm -v "$PWD":/project -e KILN_BASE=/docs ghcr.io/laidwin/kiln build
+```

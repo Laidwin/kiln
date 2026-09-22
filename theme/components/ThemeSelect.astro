@@ -1,0 +1,90 @@
+---
+/**
+ * Replaces Starlight's dropdown with a discreet button cycling Auto → Light → Dark.
+ * Keeps Starlight's localStorage key (`starlight-theme`), so ThemeProvider applies
+ * the right theme before first paint (no flash).
+ */
+const labels = {
+	auto: Astro.locals.t('themeSelect.auto'),
+	light: Astro.locals.t('themeSelect.light'),
+	dark: Astro.locals.t('themeSelect.dark'),
+};
+const accessibleLabel = Astro.locals.t('themeSelect.accessibleLabel');
+---
+
+<starlight-theme-select>
+	<button
+		type="button"
+		class="th-theme-toggle"
+		data-choice="auto"
+		data-labels={JSON.stringify(labels)}
+		data-label={accessibleLabel}
+		aria-label={`${accessibleLabel} (${labels.auto})`}
+		title={`${accessibleLabel} (${labels.auto})`}
+	>
+		<svg class="th-icon-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+			<circle cx="12" cy="12" r="8.25"></circle>
+			<path d="M12 3.75a8.25 8.25 0 0 1 0 16.5Z" fill="currentColor" stroke="none"></path>
+		</svg>
+		<svg class="th-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+			<circle cx="12" cy="12" r="4"></circle>
+			<path d="M12 2.75v1.5M12 19.75v1.5M4.4 4.4l1.06 1.06M18.54 18.54l1.06 1.06M2.75 12h1.5M19.75 12h1.5M4.4 19.6l1.06-1.06M18.54 5.46l1.06-1.06"></path>
+		</svg>
+		<svg class="th-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M20.25 14.2A8.25 8.25 0 0 1 9.8 3.75a8.25 8.25 0 1 0 10.45 10.45Z"></path>
+		</svg>
+	</button>
+</starlight-theme-select>
+
+{/* Sync the icon before paint to avoid a visual jump. */}
+<script is:inline>
+	(() => {
+		const choice = localStorage.getItem('starlight-theme') || 'auto';
+		document.querySelectorAll('.th-theme-toggle').forEach((b) => (b.dataset.choice = choice));
+	})();
+</script>
+
+<script>
+	type Theme = 'auto' | 'dark' | 'light';
+	const storageKey = 'starlight-theme';
+	const order: Theme[] = ['auto', 'light', 'dark'];
+
+	const parseTheme = (value: unknown): Theme => (value === 'dark' || value === 'light' ? value : 'auto');
+	const loadTheme = (): Theme => {
+		try {
+			return parseTheme(localStorage.getItem(storageKey));
+		} catch {
+			return 'auto';
+		}
+	};
+	const systemTheme = () => (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+
+	function applyTheme(theme: Theme) {
+		document.documentElement.dataset.theme = theme === 'auto' ? systemTheme() : theme;
+		try {
+			localStorage.setItem(storageKey, theme === 'auto' ? '' : theme);
+		} catch {}
+		document.querySelectorAll<HTMLButtonElement>('.th-theme-toggle').forEach((button) => {
+			const labels = JSON.parse(button.dataset.labels || '{}');
+			const label = `${button.dataset.label} (${labels[theme] ?? theme})`;
+			button.dataset.choice = theme;
+			button.setAttribute('aria-label', label);
+			button.title = label;
+		});
+	}
+
+	matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+		if (loadTheme() === 'auto') applyTheme('auto');
+	});
+
+	class ThemeToggle extends HTMLElement {
+		connectedCallback() {
+			applyTheme(loadTheme());
+			this.querySelector('button')?.addEventListener('click', () => {
+				const next = order[(order.indexOf(loadTheme()) + 1) % order.length]!;
+				applyTheme(next);
+			});
+		}
+	}
+	customElements.define('starlight-theme-select', ThemeToggle);
+</script>

@@ -1,0 +1,15 @@
+/*
+ * @laidwin/kiln-theme: stylesheet entry point.
+ * Styles are unlayered: they win over Starlight's (declared in layers)
+ * without a specificity arms race.
+ */
+@import './fonts.css';
+@import './tokens.css';
+@import './base.css';
+@import './header.css';
+@import './navigation.css';
+@import './content.css';
+@import './code.css';
+@import './asides.css';
+@import './components.css';
+@import './search.css';

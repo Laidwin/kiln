@@ -1,0 +1,9 @@
+# Kiln's own site, built with Kiln. See the README for every option.
+title: Kiln
+description: Fire your Markdown into a documentation site. Any language, one container, zero Node in your repo.
+logo: docs/assets/logo.svg
+accent: "#f76b15"
+locale: en
+social:
+  github: https://github.com/Laidwin/kiln
+editLink: https://github.com/Laidwin/kiln/edit/main/example/
