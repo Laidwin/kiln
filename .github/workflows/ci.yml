@@ -19,9 +19,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/kiln
-
 jobs:
   test:
     name: Test image
@@ -75,11 +72,16 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+      image: ${{ steps.name.outputs.image }}@${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      # Image references must be lowercase, and the owner name may not be (e.g. "Laidwin").
+      - name: Image name
+        id: name
+        run: echo "image=ghcr.io/$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')/kiln" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
@@ -94,7 +96,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.IMAGE }}
+          images: ${{ steps.name.outputs.image }}
           flavor: latest=false
           tags: |
             type=semver,pattern=v{{version}}
