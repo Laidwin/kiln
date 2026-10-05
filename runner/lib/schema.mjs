@@ -177,7 +177,7 @@ export function loadDocsConfig(projectDir) {
 	}
 
 	const raw = doc.toJS() ?? {};
-	const result = docsConfigSchema.safeParse(raw);
+	const result = docsConfigSchema.safeParse(raw, { reportInput: true });
 	if (!result.success) {
 		const problems = flattenIssues(result.error.issues).map((issue) => {
 			if (issue.code === 'unrecognized_keys' && issue.path.join('.') === 'social') {
