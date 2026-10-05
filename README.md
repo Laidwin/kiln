@@ -1,6 +1,14 @@
 # Kiln
 
+[![CI](https://github.com/Laidwin/kiln/actions/workflows/ci.yml/badge.svg)](https://github.com/Laidwin/kiln/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Laidwin/kiln)](https://github.com/Laidwin/kiln/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Markdown in. Docs out.** Kiln turns a `docs/` folder and a `docs.yml` file into a fast, accessible, carefully designed documentation site, for any project, in any language, without adding Node to your repository.
+
+**[Live demo →](https://laidwin.github.io/kiln/)** Kiln's own documentation, built with Kiln.
+
+![Kiln documentation site: sidebar navigation, search bar, tabbed code examples and a table of contents](example/docs/assets/screenshot.png)
 
 Kiln packages [Astro](https://astro.build), [Starlight](https://starlight.astro.build) and a custom theme into a Docker image and a reusable GitHub Actions workflow. Projects only contain Markdown and one small config file; Kiln owns the toolchain.
 
@@ -9,7 +17,7 @@ Kiln packages [Astro](https://astro.build), [Starlight](https://starlight.astro.
 - **A crafted theme:** Inter typography, automatic light and dark modes, one accent color you choose, WCAG AA contrast.
 - **Batteries included:** Pagefind search, syntax highlighting for 200+ languages, tabs, asides, steps, file trees, optimized images, and a slot for a pre-generated API reference.
 
-The documentation site for Kiln, built with Kiln, lives in [`example/`](example/).
+The source of the demo site lives in [`example/`](example/).
 
 ## Quick start
 
@@ -194,77 +202,9 @@ Options:
 
 The container hands generated files back to the owner of the mounted folder. You can also run it as yourself with `--user "$(id -u):$(id -g)"`. Exit code `1` means an invalid `docs.yml`, a missing `docs/` folder or a failed build.
 
-## Repository layout
+## Contributing
 
-```text
-.
-├── theme/                  @laidwin/kiln-theme: Starlight plugin, self-contained
-│   ├── index.mjs           plugin entry: styles, component overrides, Expressive Code, accent
-│   ├── expressive-code.mjs code block settings
-│   ├── components/         Starlight component overrides (ThemeSelect, Head)
-│   ├── fonts/              trimmed Inter and its build script
-│   └── styles/             CSS; tokens.css holds every design token
-├── runner/                 @laidwin/kiln-runner: the `kiln` CLI
-│   ├── cli.mjs             build | serve | validate
-│   ├── lib/                docs.yml schema, config generation, sidebar, Markdown plugins
-│   └── template/           skeleton of the internal Astro project
-├── example/                Kiln's own documentation site
-├── Dockerfile              multi-stage image (node:24-alpine)
-├── action.yml              composite action
-└── .github/workflows/
-    ├── pages.yml           reusable workflow: build + deploy to GitHub Pages
-    └── ci.yml              tests, image publishing, showcase deployment
-```
-
-## Developing the theme
-
-The theme is a regular Starlight plugin in `theme/`, with no dependency on the runner, so it can be published to npm on its own later.
-
-- **Design tokens:** colors, typography, spacing, radii, shadows and motion live in [`theme/styles/tokens.css`](theme/styles/tokens.css). The other stylesheets only consume tokens.
-- **Accent:** the plugin injects `--th-accent-source`; text, fill and tint variants are derived in CSS with OKLCH, clamped to keep WCAG AA contrast.
-- **Cascade:** Starlight's styles live in cascade layers; the theme's are unlayered, so they win without specificity tricks.
-- **Components:** `ThemeSelect` (a compact light/dark/auto toggle) and `Head` (font loading) are overridden. Add overrides in `theme/components/` and register them in `theme/index.mjs`.
-- **Fonts:** the theme ships a trimmed Inter (`theme/fonts/inter-kiln.woff2`, 28 kB: weights 400–700, Latin-1), rebuilt with [`theme/fonts/build.sh`](theme/fonts/build.sh). It is loaded after the first paint on a visitor's first page, over a fallback with matched metrics, which keeps mobile Lighthouse performance above 95 with no layout shift. Code uses the system monospace font. Inter is licensed under the [SIL Open Font License](theme/fonts/OFL-Inter.txt).
-
-Work on it with live reload, either with Node 22.12+ installed:
-
-```sh
-npm install
-npm run serve:example    # http://localhost:4321
-npm run build:example
-```
-
-or entirely in Docker, rebuilding the image after each theme change:
-
-```sh
-docker build -t kiln:dev .
-docker run --rm -p 4321:4321 -v "$PWD/example":/project kiln:dev serve
-```
-
-Before submitting a change, check the example site in light and dark modes, on mobile and desktop, and audit the built site, for example with `npx @axe-core/cli` and `npx lighthouse` (serve `example/site` with gzip enabled, as GitHub Pages does).
-
-## Releasing
-
-Releases are driven by git tags. The [CI workflow](.github/workflows/ci.yml):
-
-| Event | Image tags pushed to `ghcr.io/laidwin/kiln` |
-| ----- | ------------------------------------------- |
-| Pull request | none (build and test only) |
-| Push to `main` | `edge`, `sha-<commit>`; the showcase site is redeployed |
-| Tag `v1.2.3` | `v1.2.3`, `v1.2`, `v1`, `latest` (linux/amd64 and linux/arm64) |
-
-To release:
-
-```sh
-git tag v1.2.3
-git push origin v1.2.3
-```
-
-The workflow also moves the `v1.2` and `v1` git tags to the release, so projects using `Laidwin/kiln/.github/workflows/pages.yml@v1` or `Laidwin/kiln@v1` pick it up. `v0.x` releases get no `v0` tag.
-
-Follow semantic versioning: a change that requires projects to edit their `docs.yml` or workflow is a new major version. When releasing a new major, update the default `image` in `.github/workflows/pages.yml` and `action.yml` to the new `vX` tag.
-
-**First release only:** GHCR packages start private. After the first push, open the package settings on GitHub and set its visibility to **Public**, otherwise other repositories cannot pull the image.
+The repository layout, how to work on the theme and the release process are described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
