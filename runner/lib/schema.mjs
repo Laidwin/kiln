@@ -107,6 +107,7 @@ export const docsConfigSchema = z.strictObject(
 		social: social.optional(),
 		sidebar: z.array(sidebarItem, { error: 'must be a list of entries' }).optional(),
 		editLink: url().optional(),
+		poweredBy: z.boolean({ error: 'must be true or false' }).optional(),
 	},
 	{ error: 'docs.yml must contain a map of keys (title, description, …)' },
 );

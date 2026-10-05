@@ -14,11 +14,12 @@ const components = {
 /**
  * A clean, precise Starlight theme: Inter typography, slate palette, orange accent.
  *
- * @param {{ accent?: string }} [options]
+ * @param {{ accent?: string, poweredBy?: boolean }} [options]
  * @returns {import('@astrojs/starlight/types').StarlightPlugin}
  */
 export default function theme(options = {}) {
 	const accent = options.accent ?? DEFAULT_ACCENT;
+	const footer = options.poweredBy === false ? {} : { Footer: '@laidwin/kiln-theme/components/Footer.astro' };
 	if (!HEX.test(accent)) throw new Error(`@laidwin/kiln-theme: invalid accent "${accent}" (expected #rgb or #rrggbb)`);
 
 	return {
@@ -27,7 +28,7 @@ export default function theme(options = {}) {
 			'config:setup'({ config, updateConfig }) {
 				updateConfig({
 					customCss: [...styles, ...(config.customCss ?? [])],
-					components: { ...components, ...config.components },
+					components: { ...components, ...footer, ...config.components },
 					expressiveCode: config.expressiveCode === false ? false : { ...expressiveCode, ...(config.expressiveCode === true ? {} : config.expressiveCode) },
 					head: [
 						// The theme's only dynamic value: every accent shade derives from it in CSS.

@@ -129,7 +129,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			...starlightConfig,
-			plugins: [theme(${JSON.stringify({ accent: config.accent })})],
+			plugins: [theme(${JSON.stringify({ accent: config.accent, poweredBy: config.poweredBy })})],
 		}),
 	],
 });
