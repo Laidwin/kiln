@@ -63,6 +63,48 @@ jobs:
           test -d example/site/pagefind
           grep -q 'href="/kiln/getting-started/"' example/site/index.html
 
+      - name: Build a Python API reference
+        run: |
+          mkdir -p /tmp/py/docs /tmp/py/src/demo
+          printf -- '---\ntitle: Demo\n---\n' > /tmp/py/docs/index.md
+          printf 'title: Demo\napi:\n  python: api.json\n  exclude: [demo.internal]\n' > /tmp/py/docs.yml
+          echo '"""Demo package."""' > /tmp/py/src/demo/__init__.py
+          echo '"""Not documented."""' > /tmp/py/src/demo/internal.py
+          cat > /tmp/py/src/demo/shapes.py <<'PY'
+          """Shapes."""
+
+
+          class Circle:
+              """A circle.
+
+              Args:
+                  radius: Radius in centimeters.
+              """
+
+              def __init__(self, radius: float = 1.0):
+                  self.radius = radius
+
+              def area(self) -> float:
+                  """Return the area.
+
+                  Returns:
+                      The area in square centimeters.
+                  """
+                  return 3.14159 * self.radius**2
+
+
+          def biggest(circles: list[Circle]) -> Circle:
+              """Return the biggest circle."""
+              return max(circles, key=Circle.area)
+          PY
+          pipx run --spec 'griffe>=1.14,<2' griffe dump demo --search /tmp/py/src --docstyle google --full --output /tmp/py/api.json
+          docker run --rm --user "$(id -u):$(id -g)" -v /tmp/py:/project kiln:test build
+          test -f /tmp/py/site/api/index.html
+          grep -q 'Radius in centimeters' /tmp/py/site/api/demo/shapes/index.html
+          grep -q 'href="/api/demo/shapes/#circle"' /tmp/py/site/api/demo/shapes/index.html
+          test ! -e /tmp/py/site/api/demo/internal
+          test -d /tmp/py/site/pagefind
+
   publish:
     name: Publish image
     needs: test

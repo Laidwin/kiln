@@ -1,0 +1,43 @@
+---
+/** Attributes of a module or a class. Columns without any value are left out. */
+import Parts from './Parts.astro';
+
+interface Props {
+	attributes: Array<{ name: string; anchor: string; type: string; value: string; parts: any[] }>;
+	labels: Record<string, string>;
+}
+
+const { attributes, labels } = Astro.props;
+const hasType = attributes.some((a) => a.type);
+const hasValue = attributes.some((a) => a.value);
+const hasDescription = attributes.some((a) => a.parts.length);
+---
+
+<table class="kiln-api-table">
+	<thead>
+		<tr>
+			<th>{labels.name}</th>
+			{hasType && <th>{labels.type}</th>}
+			{hasValue && <th>{labels.value}</th>}
+			{hasDescription && <th>{labels.description}</th>}
+		</tr>
+	</thead>
+	<tbody>
+		{
+			attributes.map((a) => (
+				<tr id={a.anchor}>
+					<td>
+						<code>{a.name}</code>
+					</td>
+					{hasType && <td>{a.type && <code set:html={a.type} />}</td>}
+					{hasValue && <td>{a.value && <code class="kiln-api-value" set:html={a.value} />}</td>}
+					{hasDescription && (
+						<td>
+							<Parts parts={a.parts} />
+						</td>
+					)}
+				</tr>
+			))
+		}
+	</tbody>
+</table>

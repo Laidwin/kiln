@@ -23,6 +23,22 @@ on:
         description: Name of an artifact from an earlier job holding a pre-generated API reference, published under /api/.
         type: string
         default: ''
+      python-package:
+        description: Python package(s) to document, space-separated (e.g. my_package). Writes python-output with griffe for docs.yml `api.python`.
+        type: string
+        default: ''
+      python-path:
+        description: Folder containing the Python package(s), relative to working-directory (e.g. src).
+        type: string
+        default: .
+      python-docstyle:
+        description: Docstring style of the Python package(s), "google", "numpy" or "sphinx".
+        type: string
+        default: google
+      python-output:
+        description: File griffe writes, relative to working-directory. Must match `api.python` in docs.yml.
+        type: string
+        default: api.json
     outputs:
       page-url:
         description: URL of the deployed site.
@@ -50,6 +66,19 @@ jobs:
         with:
           name: ${{ inputs.api-artifact }}
           path: ${{ inputs.working-directory }}/api
+
+      # Reads the package's source without importing it: no project dependency is installed.
+      - name: Generate the Python API reference
+        if: inputs.python-package != ''
+        env:
+          PACKAGES: ${{ inputs.python-package }}
+          SEARCH_PATH: ${{ inputs.python-path }}
+          DOCSTYLE: ${{ inputs.python-docstyle }}
+          OUTPUT: ${{ inputs.python-output }}
+        run: |
+          # shellcheck disable=SC2086 # several packages are space-separated on purpose
+          pipx run --spec 'griffe>=1.14,<2' griffe dump $PACKAGES \
+            --search "$SEARCH_PATH" --docstyle "$DOCSTYLE" --full --output "$OUTPUT"
 
       # Gives the URL Pages will serve the site from: /<repo> for project sites, / for user sites and custom domains.
       - name: Configure Pages

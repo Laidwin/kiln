@@ -37,6 +37,22 @@ Kiln ships a reusable GitHub Actions workflow that builds your site with the Kil
 
 </Steps>
 
+## Python API reference
+
+For a Python project with `api.python` in `docs.yml`, the workflow generates the JSON file with griffe before building:
+
+```yaml title=".github/workflows/docs.yml"
+jobs:
+  docs:
+    uses: Laidwin/kiln/.github/workflows/pages.yml@v1
+    with:
+      python-package: my_package   # several packages: "pkg_a pkg_b"
+      python-path: src             # folder containing the package
+      python-docstyle: google      # or numpy, sphinx
+```
+
+The file is written to `api.json` (input `python-output`), next to `docs.yml`. See [Adding an API reference](/guides/api-reference/).
+
 ## Base path
 
 GitHub Pages serves project sites under `/<repo>/`. When `docs.yml` has no `base`, the workflow derives it from the repository name, so internal links work without any configuration. Set `base` explicitly for a custom domain:
