@@ -14,7 +14,7 @@ Kiln packages [Astro](https://astro.build), [Starlight](https://starlight.astro.
 
 - **Any language:** Python, Java, .NET, Rust, Go… Kiln only reads Markdown and MDX.
 - **One config file:** `docs.yml`, validated at startup with line-accurate errors. The Astro config is generated; projects never touch it.
-- **A crafted theme:** Inter typography, automatic light and dark modes, one accent color you choose, WCAG AA contrast.
+- **A crafted theme:** Inter typography, automatic light and dark modes, one accent color and optionally your own palette, WCAG AA contrast.
 - **Batteries included:** Pagefind search, syntax highlighting for 200+ languages, tabs, asides, steps, file trees, optimized images, and a slot for a pre-generated API reference.
 
 The source of the demo site lives in [`example/`](example/).
@@ -148,6 +148,10 @@ title: My project                     # required
 description: One-sentence summary.    # used by search engines
 logo: docs/assets/logo.svg            # relative path; an SVG logo is also the favicon
 accent: "#f76b15"                     # quoted hex color; every accent shade derives from it
+theme:                                # optional: your own palette, per mode
+  dark:
+    background: "#121212"
+    surface: "#1e1e1e"
 locale: en                            # interface language: en (default) or fr
 base: /my-project                     # base path; defaults to / (or the Pages path in CI)
 site: https://example.github.io       # public URL, for canonical links and the sitemap
@@ -172,6 +176,7 @@ sidebar:                              # optional: navigation mirrors docs/ by de
 | `description` | string | none | |
 | `logo`        | path or object | none | A path, `{ src, alt?, replacesTitle? }`, or `{ light, dark, alt?, replacesTitle? }`. Paths are relative to `docs.yml`. |
 | `accent`      | hex color | `#f76b15` | `"#rgb"` or `"#rrggbb"`. Lightness is adjusted automatically to keep AA contrast. |
+| `theme`       | object | Kiln palette | `light` and/or `dark` colors: `background`, `surface` (code blocks, secondary areas), `text`, `mutedText`, `border`. Text must keep a 4.5:1 contrast on `background` and `surface`. |
 | `locale`      | `en` \| `fr` | `en` | |
 | `base`        | path | `/` | Must start with `/`. Takes precedence over `KILN_BASE`. |
 | `site`        | URL | none | Takes precedence over `KILN_SITE`. |
@@ -187,7 +192,7 @@ Unknown keys and wrong types are rejected with the line number:
 Error: docs.yml is invalid:
 
   • [line 2] accent: must be a hex color (#rgb or #rrggbb), e.g. "#f76b15"
-  • [line 3] unknown key "colour". Allowed keys: title, description, logo, accent, locale, base, site, social, sidebar, editLink, poweredBy, api
+  • [line 3] unknown key "colour". Allowed keys: title, description, logo, accent, locale, base, site, social, sidebar, editLink, poweredBy, theme, api
 ```
 
 ### Pages and navigation

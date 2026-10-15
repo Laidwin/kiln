@@ -45,6 +45,7 @@ sidebar:
 | `description` | no       | none         | Site description, used by search engines. |
 | `logo`        | no       | none         | Logo image, see [below](#logo). |
 | `accent`      | no       | `#f76b15`     | Accent color, as a quoted hex value (`"#rgb"` or `"#rrggbb"`). |
+| `theme`       | no       | Kiln palette  | Colors for light and dark modes, see [Customizing](/guides/customizing/#colors). |
 | `locale`      | no       | `en`          | Interface language: `en` or `fr`. |
 | `base`        | no       | `/`           | Base path the site is served from, e.g. `/my-project`. In the GitHub Pages workflow, defaults to `/<repo>`. |
 | `site`        | no       | none         | Public URL of the site, used for canonical links and the sitemap. |

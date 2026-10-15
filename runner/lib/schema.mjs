@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'astro/zod';
 import { isMap, isSeq, LineCounter, parseDocument } from 'yaml';
+import { COLOR_NAMES, contrastProblems } from '@laidwin/kiln-theme/colors.mjs';
 
 export class ConfigError extends Error {
 	constructor(file, problems) {
@@ -91,6 +92,15 @@ const sidebarItem = z.lazy(() =>
 	),
 );
 
+const palette = z.strictObject(Object.fromEntries(COLOR_NAMES.map((name) => [name, hexColor.optional()])), {
+	error: `must be a map of colors: ${COLOR_NAMES.join(', ')}`,
+});
+
+const theme = z.strictObject(
+	{ light: palette.optional(), dark: palette.optional() },
+	{ error: 'must be a map with light and/or dark colors, e.g. { dark: { background: "#000000" } }' },
+);
+
 const apiReference = z.strictObject(
 	{
 		python: relativePath(),
@@ -116,6 +126,7 @@ export const docsConfigSchema = z.strictObject(
 		sidebar: z.array(sidebarItem, { error: 'must be a list of entries' }).optional(),
 		editLink: url().optional(),
 		poweredBy: z.boolean({ error: 'must be true or false' }).optional(),
+		theme: theme.optional(),
 		api: apiReference.optional(),
 	},
 	{ error: 'docs.yml must contain a map of keys (title, description, …)' },
@@ -219,6 +230,12 @@ export function loadDocsConfig(projectDir) {
 		if (!existsSync(resolve(projectDir, p))) {
 			problems.push({ line: lineFor(doc, lineCounter, ['logo']), message: `logo: file not found "${p}" (path relative to docs.yml)` });
 		}
+	}
+	for (const { mode, pair, ratio } of contrastProblems(config.theme)) {
+		problems.push({
+			line: lineFor(doc, lineCounter, ['theme', mode]) ?? lineFor(doc, lineCounter, ['theme']),
+			message: `theme.${mode}: ${pair} has a contrast of ${ratio}:1, below the 4.5:1 needed to read it comfortably (WCAG AA). Darken or lighten one of the two colors.`,
+		});
 	}
 	if (config.api) {
 		const line = lineFor(doc, lineCounter, ['api', 'python']);

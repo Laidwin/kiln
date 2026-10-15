@@ -158,7 +158,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			...starlightConfig,
-			plugins: [theme(${JSON.stringify({ accent: config.accent, poweredBy: config.poweredBy })})],
+			plugins: [theme(${JSON.stringify({ accent: config.accent, poweredBy: config.poweredBy, colors: config.theme })})],
 		}),
 	],
 });
