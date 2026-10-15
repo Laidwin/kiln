@@ -14,7 +14,9 @@ This guide is for people working on Kiln itself. To use Kiln in your project, se
 │   └── styles/             CSS; tokens.css holds every design token
 ├── runner/                 @laidwin/kiln-runner: the `kiln` CLI
 │   ├── cli.mjs             build | serve | validate
-│   ├── lib/                docs.yml schema, config generation, sidebar, Markdown plugins
+│   ├── lib/                docs.yml schema, config generation, sidebar, Markdown plugins,
+│   │                       Python API model (python-api.mjs)
+│   ├── api/                /api/ pages and components, added when docs.yml sets api.python
 │   └── template/           skeleton of the internal Astro project
 ├── example/                Kiln's own documentation site
 ├── Dockerfile              multi-stage image (node:24-alpine)

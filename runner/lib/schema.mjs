@@ -91,6 +91,14 @@ const sidebarItem = z.lazy(() =>
 	),
 );
 
+const apiReference = z.strictObject(
+	{
+		python: relativePath(),
+		exclude: z.array(nonEmpty(), { error: 'must be a list of module names, e.g. [my_package.internal]' }).optional(),
+	},
+	{ error: 'must be a map, e.g. { python: api.json }' },
+);
+
 const basePath = z
 	.string({ error: 'must be a string, e.g. "/my-project"' })
 	.regex(/^\/[\w\-./~]*$/, 'must start with "/" and contain only plain URL characters, e.g. "/my-project"');
@@ -108,6 +116,7 @@ export const docsConfigSchema = z.strictObject(
 		sidebar: z.array(sidebarItem, { error: 'must be a list of entries' }).optional(),
 		editLink: url().optional(),
 		poweredBy: z.boolean({ error: 'must be true or false' }).optional(),
+		api: apiReference.optional(),
 	},
 	{ error: 'docs.yml must contain a map of keys (title, description, …)' },
 );
@@ -209,6 +218,21 @@ export function loadDocsConfig(projectDir) {
 	for (const p of logoPaths) {
 		if (!existsSync(resolve(projectDir, p))) {
 			problems.push({ line: lineFor(doc, lineCounter, ['logo']), message: `logo: file not found "${p}" (path relative to docs.yml)` });
+		}
+	}
+	if (config.api) {
+		const line = lineFor(doc, lineCounter, ['api', 'python']);
+		if (!existsSync(resolve(projectDir, config.api.python))) {
+			problems.push({
+				line,
+				message: `api.python: file not found "${config.api.python}". Generate it with griffe, e.g.:\n\n      griffe dump my_package --docstyle google --full --output ${config.api.python}`,
+			});
+		}
+		if (existsSync(resolve(projectDir, 'api'))) {
+			problems.push({
+				line,
+				message: 'api.python: an api/ folder also exists. Both are published under /api/: keep one of them.',
+			});
 		}
 	}
 	if (problems.length) throw new ConfigError('docs.yml', problems);

@@ -126,7 +126,12 @@ checkProject();
 
 const mode = command === 'serve' ? 'dev' : 'build';
 mkdirSync(appDir, { recursive: true });
-const prepared = prepareApp({ config: initial, projectDir, appDir, templateDir, mode, polling });
+let prepared;
+try {
+	prepared = prepareApp({ config: initial, projectDir, appDir, templateDir, mode, polling });
+} catch (err) {
+	fail(`\nError: ${err.message}\n`);
+}
 
 // Astro writes temporary build files relative to the working directory:
 // run from the internal app so nothing is ever written into the user's project.
@@ -169,9 +174,16 @@ const regenerate = (reason) => {
 		return;
 	}
 	log(`${reason}, updating configuration`);
-	prepareApp({ config, projectDir, appDir, templateDir, mode, polling });
+	try {
+		prepareApp({ config, projectDir, appDir, templateDir, mode, polling });
+	} catch (err) {
+		console.error(`Error: ${err.message}  (keeping the previous version)`);
+	}
 };
 watchFile(join(projectDir, 'docs.yml'), { interval: 500 }, () => regenerate('docs.yml changed'));
+if (initial.api?.python) {
+	watchFile(resolve(projectDir, initial.api.python), { interval: 1000 }, () => regenerate(`${initial.api.python} changed`));
+}
 setInterval(() => {
 	const next = topLevelSignature(join(projectDir, 'docs'));
 	if (next !== signature) {

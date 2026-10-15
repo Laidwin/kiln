@@ -1,0 +1,39 @@
+---
+/** A function, method, property or attribute, with its signature and docstring. */
+import { Badge, Code } from '@astrojs/starlight/components';
+import Details from './Details.astro';
+import Parts from './Parts.astro';
+
+interface Props {
+	member: any;
+	labels: Record<string, string>;
+	level: 2 | 3;
+}
+
+const { member, labels, level } = Astro.props;
+const Heading = `h${level}` as 'h2';
+---
+
+<section class="kiln-api-member">
+	<Heading id={member.anchor}>
+		<code>{member.name}</code>
+		{member.labels.map((label: string) => <Badge text={label} variant="note" size="small" />)}
+	</Heading>
+	{member.signature && <Code code={member.signature} lang="python" />}
+	{
+		member.kind === 'attribute' && (member.type || member.value) && (
+			<p class="kiln-api-attr">
+				{member.type && <code set:html={member.type} />}
+				{member.value && (
+					<>
+						{' = '}
+						<code set:html={member.value} />
+					</>
+				)}
+			</p>
+		)
+	}
+	<Parts parts={member.parts} />
+	<Details labels={labels} params={member.params} returns={member.returns} yields={member.yields} raises={member.raises} notes={member.notes} />
+	{member.source && <a class="kiln-api-source" href={member.source}>{labels.source}</a>}
+</section>

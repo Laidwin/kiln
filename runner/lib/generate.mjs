@@ -2,6 +2,7 @@ import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, r
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { autoSidebar, toStarlightSidebar } from './sidebar.mjs';
+import { loadPythonApi } from './python-api.mjs';
 
 const UI = {
 	fr: { label: 'Français', api: 'Référence API' },
@@ -33,6 +34,35 @@ function copyIfChanged(src, dest) {
 	cpSync(src, dest);
 }
 
+/** cpSync filter: skip files whose copy is already identical, so the dev watcher is not triggered. */
+const unchanged = (src, dest) => statSync(src).isDirectory() || !existsSync(dest) || !readFileSync(src).equals(readFileSync(dest));
+
+function writeIfChanged(file, content) {
+	if (existsSync(file) && readFileSync(file, 'utf8') === content) return;
+	mkdirSync(dirname(file), { recursive: true });
+	writeFileSync(file, content);
+}
+
+/**
+ * Python API reference (docs.yml `api.python`): write the page model and add the /api/ routes,
+ * or remove them when the option is not set.
+ */
+function preparePythonApi({ config, projectDir, appDir, base, locale }) {
+	const pagesDir = join(appDir, 'src', 'pages', 'api');
+	const componentsDir = join(appDir, 'src', 'components', 'kiln-api');
+	const modelFile = join(appDir, 'src', 'kiln-api.json');
+	if (!config.api?.python) {
+		for (const path of [pagesDir, componentsDir, modelFile]) rmSync(path, { recursive: true, force: true });
+		return null;
+	}
+	const model = loadPythonApi({ file: resolve(projectDir, config.api.python), exclude: config.api.exclude, base, locale });
+	const templates = join(import.meta.dirname, '..', 'api');
+	cpSync(join(templates, 'pages'), pagesDir, { recursive: true, filter: unchanged });
+	cpSync(join(templates, 'components'), componentsDir, { recursive: true, filter: unchanged });
+	writeIfChanged(modelFile, JSON.stringify({ pages: model.pages, labels: model.labels }));
+	return model;
+}
+
 function copyAsset(projectDir, appDir, relPath, name) {
 	const target = join(appDir, 'src', 'assets', `${name}${extname(relPath)}`);
 	copyIfChanged(resolve(projectDir, relPath), target);
@@ -45,10 +75,7 @@ function copyAsset(projectDir, appDir, relPath, name) {
  */
 export function prepareApp({ config, projectDir, appDir, templateDir, mode, polling }) {
 	// Copy the skeleton without touching identical files, so the dev watcher is not triggered.
-	cpSync(templateDir, appDir, {
-		recursive: true,
-		filter: (src, dest) => statSync(src).isDirectory() || !existsSync(dest) || !readFileSync(src).equals(readFileSync(dest)),
-	});
+	cpSync(templateDir, appDir, { recursive: true, filter: unchanged });
 
 	const docsDir = join(projectDir, 'docs');
 	const apiDir = join(projectDir, 'api');
@@ -77,6 +104,8 @@ export function prepareApp({ config, projectDir, appDir, templateDir, mode, poll
 	if (hasApi) {
 		sidebar.push({ label: UI[locale].api, link: '/api/', attrs: { 'data-api-link': '' } });
 	}
+	const pythonApi = preparePythonApi({ config, projectDir, appDir, base, locale });
+	if (pythonApi) sidebar.push(pythonApi.sidebar);
 
 	const starlight = {
 		title: config.title,

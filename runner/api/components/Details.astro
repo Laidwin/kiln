@@ -1,0 +1,84 @@
+---
+/** Parameters, returns, raises and notes of a function or class. */
+import { Aside } from '@astrojs/starlight/components';
+import Parts from './Parts.astro';
+
+interface Item {
+	type?: string;
+	html?: string;
+}
+interface Param extends Item {
+	name: string;
+	default?: string;
+}
+interface Props {
+	labels: Record<string, string>;
+	params?: Param[];
+	returns?: Item[];
+	yields?: Item[];
+	raises?: Item[];
+	notes?: Array<{ title: string; kind: string; parts: any[] }>;
+}
+
+const { labels, params = [], returns = [], yields = [], raises = [], notes = [] } = Astro.props;
+const asideType = (kind: string) =>
+	({ warning: 'caution', caution: 'caution', attention: 'caution', danger: 'danger', error: 'danger', tip: 'tip', hint: 'tip' })[kind.toLowerCase()] ?? 'note';
+const showDefault = params.some((p) => p.default);
+---
+
+{
+	params.length > 0 && (
+		<div class="kiln-api-block">
+			<p class="kiln-api-heading">{labels.parameters}</p>
+			<table class="kiln-api-table">
+				<thead>
+					<tr>
+						<th>{labels.name}</th>
+						<th>{labels.type}</th>
+						{showDefault && <th>{labels.default}</th>}
+						<th>{labels.description}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{params.map((p) => (
+						<tr>
+							<td><code>{p.name}</code></td>
+							<td>{p.type && <code set:html={p.type} />}</td>
+							{showDefault && <td>{p.default && <code set:html={p.default} />}</td>}
+							<td set:html={p.html ?? ''} />
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	)
+}
+{
+	[
+		[labels.returns, returns],
+		[labels.yields, yields],
+		[labels.raises, raises],
+	]
+		.filter(([, items]) => (items as Item[]).length > 0)
+		.map(([title, items]) => (
+			<div class="kiln-api-block">
+				<p class="kiln-api-heading">{title}</p>
+				<ul class="kiln-api-list">
+					{(items as Item[]).map((item) => (
+						<li>
+							{item.type && <code set:html={item.type} />}
+							{item.type && item.html && <span class="kiln-api-sep" aria-hidden="true" />}
+							<span set:html={item.html ?? ''} />
+						</li>
+					))}
+				</ul>
+			</div>
+		))
+}
+{
+	notes.map((note) => (
+		<Aside type={asideType(note.kind) as 'note'} title={note.title || undefined}>
+			<Parts parts={note.parts} />
+		</Aside>
+	))
+}
