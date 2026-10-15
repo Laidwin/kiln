@@ -51,10 +51,14 @@
 	outline-offset: -2px;
 }
 
-/* Current page (theme signature): tinted background and a thin accent bar on the leading edge. */
-.sidebar-content [aria-current='page'],
-.sidebar-content [aria-current='page']:hover,
-.sidebar-content [aria-current='page']:focus {
+/*
+ * Current page (theme signature): tinted background and a thin accent bar on the leading edge.
+ * `a[…]` matches the specificity of `a.large` (top-level links): without it the weight changed on
+ * hover only, and a long label could wrap onto a second line under the pointer.
+ */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
 	color: var(--th-accent-text);
 	background-color: var(--th-accent-tint);
 	box-shadow: inset 3px 0 0 var(--th-accent-fill);
