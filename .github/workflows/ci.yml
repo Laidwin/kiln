@@ -55,6 +55,15 @@ jobs:
           grep -q '\[line 2\] accent: must be a hex color' err.txt
           grep -q 'unknown key "colour"' err.txt
 
+      - name: Unreadable theme colors fail
+        run: |
+          printf 'title: Test\ntheme:\n  dark:\n    background: "#ffffff"\n' > /tmp/invalid/docs.yml
+          if docker run --rm -v /tmp/invalid:/project kiln:test validate 2> err.txt; then
+            echo "::error::Unreadable theme colors were accepted"; exit 1
+          fi
+          cat err.txt
+          grep -q 'theme.dark: text on background has a contrast of' err.txt
+
       - name: Build the example under a base path
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e KILN_BASE=/kiln -v "$PWD/example":/project kiln:test build

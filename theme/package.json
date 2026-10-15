@@ -5,11 +5,13 @@
   "type": "module",
   "exports": {
     ".": "./index.mjs",
+    "./colors.mjs": "./colors.mjs",
     "./styles/*": "./styles/*",
     "./components/*": "./components/*"
   },
   "files": [
     "index.mjs",
+    "colors.mjs",
     "expressive-code.mjs",
     "styles",
     "components",

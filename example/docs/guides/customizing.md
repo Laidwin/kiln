@@ -1,6 +1,6 @@
 ---
 title: Customizing
-description: Change the accent color, logo, navigation and language of your site.
+description: Change the accent color, palette, logo, navigation and language of your site.
 sidebar:
   order: 7
 ---
@@ -14,6 +14,36 @@ accent: "#0ea5e9"
 ```
 
 Every accent shade (links, active states, focus rings, buttons) is derived from this single color. Kiln adjusts its lightness where needed so text stays readable with WCAG AA contrast, even with yellow or light green.
+
+## Colors
+
+To match your brand beyond the accent, replace the theme's palette for light mode, dark mode or both:
+
+```yaml title="docs.yml"
+theme:
+  light:
+    background: "#ffffff"
+    surface: "#f5f5f7"
+    text: "#1d1d1f"
+    mutedText: "#6e6e73"
+    border: "#e3e3e8"
+  dark:
+    background: "#121212"
+    surface: "#1e1e1e"
+    text: "#f5f5f7"
+    mutedText: "#b3b3b3"
+    border: "#333333"
+```
+
+| Color | Used for |
+| ----- | -------- |
+| `background` | Page, header and sidebar |
+| `surface` | Code blocks and secondary areas |
+| `text` | Body text; hover and inline code shades derive from it |
+| `mutedText` | Descriptions, captions, inactive navigation |
+| `border` | Borders of tables, cards and fields |
+
+Every color is optional: the ones you leave out keep Kiln's values. Kiln checks that `text` and `mutedText` stay readable on `background` and `surface` (4.5:1, WCAG AA) and rejects the configuration otherwise, with the measured contrast.
 
 ## Logo
 
