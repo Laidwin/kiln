@@ -1,4 +1,4 @@
-import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { autoSidebar, toStarlightSidebar } from './sidebar.mjs';
@@ -13,7 +13,9 @@ const UI = {
 function link(source, target) {
 	if (existsSync(target) || isDanglingLink(target)) {
 		if (lstatSync(target).isSymbolicLink() && readlinkSync(target) === source && existsSync(source)) return;
-		rmSync(target, { recursive: true, force: true });
+		// rmSync leaves a dangling symlink in place (Node 24.0), so unlink links explicitly.
+		if (lstatSync(target).isSymbolicLink()) unlinkSync(target);
+		else rmSync(target, { recursive: true, force: true });
 	}
 	if (!existsSync(source)) return;
 	mkdirSync(dirname(target), { recursive: true });

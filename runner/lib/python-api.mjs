@@ -319,7 +319,8 @@ export function loadPythonApi({ file, exclude = [], base, locale }) {
 		const lastPos = params.map((p) => p.kind).lastIndexOf('positional-only');
 		if (lastPos !== -1) text.splice(lastPos + 1, 0, '/');
 
-		const returns = fn.returns ? ` -> ${exprToText(fn.returns)}` : '';
+		// A class signature comes from __init__, whose return type (None) is not the class's.
+		const returns = fn.returns && keyword !== 'class' ? ` -> ${exprToText(fn.returns)}` : '';
 		const prefix = `${(fn.labels ?? []).includes('async') ? 'async ' : ''}${keyword} ${name}`;
 		const oneLine = `${prefix}(${text.join(', ')})${returns}${keyword === 'class' ? '' : ':'}`;
 		if (oneLine.length <= SIGNATURE_WIDTH || !text.length) return oneLine;
@@ -370,7 +371,8 @@ export function loadPythonApi({ file, exclude = [], base, locale }) {
 			anchor: slugify(`${anchorPrefix}${attr.name}`),
 			labels: (attr.labels ?? []).filter((l) => ['property', 'class-attribute', 'writable'].includes(l)),
 			type: exprHtml(attr.annotation ?? attr.returns ?? doc?.annotation),
-			value: attr.value !== undefined && attr.value !== null && !(attr.labels ?? []).includes('property') ? escapeHtml(exprToText(attr.value)) : '',
+			value:
+				attr.value !== undefined && attr.value !== null && !(attr.labels ?? []).some((l) => l === 'property' || l === 'instance-attribute') ? escapeHtml(exprToText(attr.value)) : '',
 			parts: docs.parts.length ? docs.parts : doc?.description ? toParts(doc.description) : [],
 		};
 	}
@@ -383,6 +385,8 @@ export function loadPythonApi({ file, exclude = [], base, locale }) {
 		// Google style documents the constructor either in the class docstring or in __init__.
 		for (const [key, value] of initDocs?.params ?? []) if (!docs.params.has(key)) docs.params.set(key, value);
 		const documentedAttributes = new Map(docs.attributes.map((a) => [a.name, a]));
+		// Dataclass fields are documented as attributes: reuse them for the constructor parameters.
+		for (const [key, value] of documentedAttributes) if (!docs.params.has(key)) docs.params.set(key, value);
 
 		const methods = [];
 		const properties = [];
