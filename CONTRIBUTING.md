@@ -40,6 +40,7 @@ Work on it with live reload, either with Node 22.12+ installed:
 
 ```sh
 npm install
+npm run api:example      # API reference of the sample package in example/src, needs uv
 npm run serve:example    # http://localhost:4321
 npm run build:example
 ```
@@ -50,6 +51,8 @@ or entirely in Docker, rebuilding the image after each theme change:
 docker build -t kiln:dev .
 docker run --rm -p 4321:4321 -v "$PWD/example":/project kiln:dev serve
 ```
+
+The example's `api.json` is generated, not committed: run `npm run api:example` again after editing `example/src/pottery`.
 
 Before submitting a change, check the example site in light and dark modes, on mobile and desktop, and audit the built site, for example with `npx @axe-core/cli` and `npx lighthouse` (serve `example/site` with gzip enabled, as GitHub Pages does).
 

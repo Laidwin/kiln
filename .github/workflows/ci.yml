@@ -41,6 +41,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # The showcase documents a sample Python package; the Pages workflow does the same with python-package.
+      - name: Generate the example's Python API reference
+        run: pipx run --spec 'griffe>=1.14,<2' griffe dump pottery --search example/src --docstyle google --full --output example/api.json
+
       - name: Valid docs.yml passes
         run: docker run --rm -v "$PWD/example":/project kiln:test validate
 
@@ -69,6 +73,7 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" -e KILN_BASE=/kiln -v "$PWD/example":/project kiln:test build
           test -f example/site/index.html
           test -f example/site/api/index.html
+          grep -q 'href="/kiln/api/pottery/clay/#claybody"' example/site/api/pottery/firing/index.html
           test -d example/site/pagefind
           grep -q 'href="/kiln/getting-started/"' example/site/index.html
 
@@ -204,3 +209,5 @@ jobs:
     with:
       working-directory: example
       image: ${{ needs.publish.outputs.image }}
+      python-package: pottery
+      python-path: src
