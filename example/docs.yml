@@ -7,3 +7,5 @@ locale: en
 social:
   github: https://github.com/Laidwin/kiln
 editLink: https://github.com/Laidwin/kiln/edit/main/example/
+api:
+  python: api.json

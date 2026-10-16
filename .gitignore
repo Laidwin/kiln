@@ -3,3 +3,4 @@ runner/.app/
 site/
 .astro/
 .DS_Store
+example/api.json

@@ -25,6 +25,8 @@ api:
   exclude: [my_package.tests]   # optional
 ```
 
+This site documents a small sample package, `pottery`, this way: browse [its reference](/api/) to see the result, or read [its source](https://github.com/Laidwin/kiln/tree/main/example/src/pottery).
+
 Each public module gets a page with its classes, functions and attributes: signatures, then the parameters, return values, exceptions and notes of the docstrings (Google, NumPy or Sphinx style, set by `--docstyle`). Type names link to the classes they refer to, and every page is indexed by the search. Names starting with `_` are left out.
 
 With `kiln serve`, the pages update when `api.json` changes: run the `griffe dump` command again after editing docstrings.

@@ -7,6 +7,7 @@
     "runner"
   ],
   "scripts": {
+    "api:example": "uvx --from 'griffe>=1.14,<2' griffe dump pottery --search example/src --docstyle google --full --output example/api.json",
     "build:example": "node runner/cli.mjs build --project example",
     "serve:example": "node runner/cli.mjs serve --project example",
     "validate:example": "node runner/cli.mjs validate --project example"
