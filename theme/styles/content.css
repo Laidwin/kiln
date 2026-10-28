@@ -214,6 +214,17 @@ h1#_top {
 	text-align: center;
 }
 
+/* Inline code may break anywhere in prose, but in a cell that would let the table
+   shrink a column to a few characters: break only when a word cannot fit, and keep
+   the code of the first column (names, paths, routes) on one line. */
+.sl-markdown-content table td:not(:where(.not-content *)) code {
+	overflow-wrap: break-word;
+}
+
+.sl-markdown-content table td:first-child:not(:last-child):not(:where(.not-content *)) code {
+	white-space: nowrap;
+}
+
 .sl-markdown-content tbody tr:not(:where(.not-content *)) {
 	transition: background-color var(--th-duration-fast) var(--th-ease);
 }
