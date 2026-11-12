@@ -74,6 +74,9 @@ jobs:
           test -f example/site/index.html
           test -f example/site/api/index.html
           grep -q 'href="/kiln/api/pottery/clay/#claybody"' example/site/api/pottery/firing/index.html
+          # Next to the Python reference, the OpenAPI one lives under /api/rest/.
+          grep -q 'https://studio.example.com/v2/firings' example/site/api/rest/firings/start-firing/index.html
+          test -f example/site/api/rest/schemas/firing/index.html
           test -d example/site/pagefind
           grep -q 'href="/kiln/getting-started/"' example/site/index.html
 
@@ -118,6 +121,73 @@ jobs:
           grep -q 'href="/api/demo/shapes/#circle"' /tmp/py/site/api/demo/shapes/index.html
           test ! -e /tmp/py/site/api/demo/internal
           test -d /tmp/py/site/pagefind
+
+      - name: Build an OpenAPI reference and portable Markdown
+        run: |
+          mkdir -p /tmp/oa/docs/guides
+          printf '# Welcome\n\nSee [the guide](guides/start.md#setup).\n\n> [!WARNING]\n> Read this first.\n' > /tmp/oa/docs/index.md
+          printf '# Start\n\n## Setup\n\nBack [home](../index.md).\n' > /tmp/oa/docs/guides/start.md
+          printf '# Changelog\n\n## 1.0.0\n' > /tmp/oa/CHANGELOG.md
+          printf '.site-title { text-transform: uppercase; }\n' > /tmp/oa/extra.css
+          cat > /tmp/oa/openapi.yaml <<'YAML'
+          openapi: 3.1.0
+          info: { title: Pet API, version: 1.0.0, description: Pets for everyone. }
+          servers: [{ url: /v1 }]
+          security: [{ token: [] }]
+          tags: [{ name: pets, x-displayName: Pets }]
+          paths:
+            /pets/{id}:
+              get:
+                operationId: getPet
+                tags: [pets]
+                summary: Get a pet
+                parameters: [{ name: id, in: path, required: true, schema: { type: integer, example: 7 } }]
+                responses:
+                  "200": { description: The pet, content: { application/json: { schema: { $ref: "#/components/schemas/Pet" } } } }
+          components:
+            securitySchemes: { token: { type: http, scheme: bearer } }
+            schemas:
+              Pet:
+                type: object
+                required: [name]
+                properties:
+                  name: { type: string, description: Name of the pet, example: Rex }
+          YAML
+          cat > /tmp/oa/docs.yml <<'YML'
+          title: Pets
+          css: extra.css
+          nav:
+            - { label: Guide, link: /guides/start/ }
+          include:
+            - { file: CHANGELOG.md, slug: changelog }
+          api:
+            openapi: openapi.yaml
+            server: https://pets.example.com
+          YML
+          docker run --rm --user "$(id -u):$(id -g)" -v /tmp/oa:/project kiln:test build
+          # Portable Markdown: title from the H1, relative links, GitHub alerts, included file.
+          grep -q '<title>Start' /tmp/oa/site/guides/start/index.html
+          grep -q 'href="/guides/start/#setup"' /tmp/oa/site/index.html
+          grep -q 'href="/"' /tmp/oa/site/guides/start/index.html
+          grep -q 'starlight-aside--caution' /tmp/oa/site/index.html
+          test -f /tmp/oa/site/changelog/index.html
+          grep -q 'th-nav' /tmp/oa/site/index.html
+          # OpenAPI reference: introduction, operation with samples, schema, published description.
+          test -f /tmp/oa/site/api/index.html
+          grep -q 'https://pets.example.com/v1/pets/7' /tmp/oa/site/api/pets/get-pet/index.html
+          grep -q 'Bearer' /tmp/oa/site/api/pets/get-pet/index.html
+          grep -q 'Name of the pet' /tmp/oa/site/api/schemas/pet/index.html
+          test -f /tmp/oa/site/kiln-openapi/openapi.yaml
+          test -d /tmp/oa/site/pagefind
+
+      - name: Broken OpenAPI references fail with a clear error
+        run: |
+          printf 'openapi: 3.1.0\ninfo: { title: X, version: "1" }\npaths:\n  /x:\n    get:\n      responses: { "200": { $ref: "#/components/responses/Nope" } }\n' > /tmp/oa/openapi.yaml
+          if docker run --rm -v /tmp/oa:/project kiln:test validate 2> err.txt; then
+            echo "::error::A broken OpenAPI reference was accepted"; exit 1
+          fi
+          cat err.txt
+          grep -q 'reference "#/components/responses/Nope" points to nothing' err.txt
 
   publish:
     name: Publish image
