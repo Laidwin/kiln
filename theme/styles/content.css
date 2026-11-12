@@ -15,6 +15,7 @@
 
 h1#_top {
 	margin-top: var(--th-space-4);
+	font-family: var(--th-font-heading);
 	font-size: var(--th-text-h1);
 	font-weight: var(--th-weight-heading);
 	line-height: var(--th-leading-tight);
@@ -31,6 +32,7 @@ h1#_top {
 
 .sl-markdown-content :is(h2, h3, h4, h5, h6):not(:where(.not-content *)) {
 	color: var(--th-text);
+	font-family: var(--th-font-heading);
 	font-weight: var(--th-weight-heading);
 	line-height: var(--th-leading-heading);
 	letter-spacing: var(--th-tracking-heading);

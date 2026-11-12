@@ -1,0 +1,61 @@
+---
+/**
+ * Header links from docs.yml `nav`, then Starlight's social icons.
+ * A `{ label, items }` entry is a small menu (native <details>, works without JavaScript).
+ * On small screens Starlight moves this component into the mobile menu, where the links stack.
+ */
+import Default from '@astrojs/starlight/components/SocialIcons.astro';
+import kiln from 'virtual:kiln-theme/config';
+
+type Link = { label: string; link: string };
+type Item = Link | { label: string; items: Link[] };
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const href = (link: string) => (link.startsWith('/') && !link.startsWith('//') ? `${base}${link}` : link);
+const path = Astro.url.pathname;
+const current = (link: string) => link.startsWith('/') && link !== '/' && path.startsWith(href(link).replace(/\/?$/, '/'));
+const nav = kiln.nav as Item[];
+---
+
+{
+	nav.length > 0 && (
+		<nav class="th-nav" aria-label="Main">
+			{nav.map((item) =>
+				'items' in item ? (
+					<details class="th-nav-menu">
+						<summary>{item.label}</summary>
+						<ul>
+							{item.items.map((sub) => (
+								<li>
+									<a href={href(sub.link)} aria-current={current(sub.link) ? 'page' : undefined}>
+										{sub.label}
+									</a>
+								</li>
+							))}
+						</ul>
+					</details>
+				) : (
+					<a href={href(item.link)} aria-current={current(item.link) ? 'page' : undefined}>
+						{item.label}
+					</a>
+				),
+			)}
+		</nav>
+	)
+}
+<Default />
+
+<script>
+	// Close an open header menu when clicking elsewhere or pressing Escape.
+	const menus = () => document.querySelectorAll<HTMLDetailsElement>('.th-nav-menu[open]');
+	document.addEventListener('click', (e) => {
+		for (const m of menus()) if (!m.contains(e.target as Node)) m.open = false;
+	});
+	document.addEventListener('keydown', (e) => {
+		if (e.key !== 'Escape') return;
+		for (const m of menus()) {
+			m.open = false;
+			m.querySelector('summary')?.focus();
+		}
+	});
+</script>

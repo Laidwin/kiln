@@ -14,6 +14,8 @@
 	/* Inter variants: more legible letters and digits (single-storey a, tailed l, serifed 1). */
 	--th-font-features: 'cv05', 'cv08', 'cv11', 'ss03';
 	--th-font-mono: ui-monospace, 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+	/* Headings and the page title: the body font unless docs.yml `fonts.heading` sets one. */
+	--th-font-heading: var(--th-font-sans);
 
 	--th-text-xs: 0.75rem; /* 12px */
 	--th-text-sm: 0.8125rem; /* 13px */
