@@ -1,13 +1,42 @@
 ---
 title: Adding an API reference
-description: Generate a Python API reference from docstrings, or publish one made by Javadoc, DocFX or any other tool.
+description: Render a REST API reference from an OpenAPI description, a Python reference from docstrings, or publish one made by any other tool.
 sidebar:
   order: 5
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Kiln publishes an API reference under `/api/`, with a link at the bottom of the sidebar. For Python, Kiln renders it itself, with the site's theme and search. For other languages, it publishes the HTML your usual tool generates.
+Kiln publishes an API reference under `/api/`, with a link at the bottom of the sidebar. For an HTTP API described with OpenAPI, and for Python, Kiln renders it itself, with the site's theme and search. For other languages, it publishes the HTML your usual tool generates.
+
+## REST APIs (OpenAPI)
+
+Point `docs.yml` to an OpenAPI 3.0 or 3.1 description, in YAML or JSON:
+
+```yaml title="docs.yml"
+api:
+  openapi: docs/openapi.yaml
+  server: https://api.example.com   # optional
+```
+
+This site documents a sample API this way, the **Pottery Studio API**: browse [its reference](/api/rest/) to see the result, or read [its description](https://github.com/Laidwin/kiln/blob/main/example/openapi.yaml).
+
+Kiln builds a reference in the manner of hosted API references:
+
+- an **introduction** from `info`: description, base URL, authentication schemes, and every operation grouped by tag;
+- **one page per operation**, listed in the sidebar with its HTTP method: the endpoint, the authentication it needs, its path, query and header parameters, its request body and its responses, each field with its type, whether it is required, its allowed values and its description. Nested objects fold open on demand;
+- a **right-hand column** with the request in cURL, JavaScript and Python (the language you pick follows you from page to page) and an example response for each status;
+- **one page per schema** of `components.schemas`, with an example and the operations that use it.
+
+Examples come from the `example` and `examples` of the description; when there are none, Kiln builds one from the schema (types, formats, enums, defaults). Samples use the first server of the description: `server` gives the host of a relative server URL (`/v1`), or replaces the host of an absolute one. The description itself is published next to the site, for clients and code generators, and linked from the introduction.
+
+Alone, the reference lives under `/api/`. Next to a Python reference (as on this site), the Python one keeps `/api/` and the REST one moves to `/api/rest/`; the sidebar then shows a **Python API** and a **REST API** group.
+
+Tag names become group titles; set `x-displayName` on a tag to choose another title. Descriptions are Markdown. External `$ref` files are not followed: bundle the description into one file first (for example with `redocly bundle`). Kiln checks every local `$ref` at startup and reports the line of a broken one.
+
+:::note
+There is no "Try it" button: from a static site, sending requests needs the API to accept cross-origin calls, which most APIs, especially self-hosted ones, do not.
+:::
 
 ## Python
 
@@ -66,5 +95,5 @@ Generate the reference in a job step before the Kiln build, and it will be publi
 :::
 
 :::note
-Pages of an `api/` folder are not indexed by the site search, which keeps results focused on your guides. A project uses either `api.python` or an `api/` folder, not both.
+Pages of an `api/` folder are not indexed by the site search, which keeps results focused on your guides. A project uses `api.openapi`, `api.python` (or both), or an `api/` folder.
 :::

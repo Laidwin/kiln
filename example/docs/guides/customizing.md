@@ -1,6 +1,6 @@
 ---
 title: Customizing
-description: Change the accent color, palette, logo, navigation and language of your site.
+description: Change the accent color, palette, fonts, logo, navigation and language of your site.
 sidebar:
   order: 7
 ---
@@ -45,6 +45,43 @@ theme:
 
 Every color is optional: the ones you leave out keep Kiln's values. Kiln checks that `text` and `mutedText` stay readable on `background` and `surface` (4.5:1, WCAG AA) and rejects the configuration otherwise, with the measured contrast.
 
+## Fonts
+
+Kiln uses Inter for text and the system's monospace font for code. To use your own typefaces, give `.woff2` files for the body text, the headings, the code, or any of them:
+
+```yaml title="docs.yml"
+fonts:
+  heading: docs/assets/fonts/display.woff2       # one file: a variable font, or a single weight
+  body:
+    - { file: docs/assets/fonts/text-400.woff2, weight: 400 }
+    - { file: docs/assets/fonts/text-700.woff2, weight: 700 }
+    - { file: docs/assets/fonts/text-400-italic.woff2, weight: 400, style: italic }
+  mono: docs/assets/fonts/code.woff2
+```
+
+Headings use the body font unless `heading` is set. Fonts are served with the site; check that their license allows it (the SIL Open Font License does). Convert other formats to `.woff2` first.
+
+## Custom CSS
+
+For an identity that goes beyond colors and fonts, add a stylesheet. It loads after the theme, so its rules win:
+
+```yaml title="docs.yml"
+css: docs/assets/brand.css
+```
+
+```css title="docs/assets/brand.css"
+/* Headings in capitals, a colored band above the header. */
+h1#_top,
+.sl-markdown-content h2 {
+	text-transform: uppercase;
+}
+.page > .header {
+	border-top: 4px solid var(--th-accent);
+}
+```
+
+The theme's design tokens (`--th-accent`, `--th-text`, `--th-bg`, `--th-font-heading`…) are available in it. Keep this file small: class names of the theme and of Starlight may change between versions, and Kiln cannot check the contrast of colors set here.
+
 ## Logo
 
 A relative path to an image. An SVG logo is also used as the favicon.
@@ -76,6 +113,21 @@ sidebar:
     link: https://github.com/Laidwin/kiln/releases
 ```
 
+### Header links
+
+`nav` adds links to the header, next to the search, for the main sections of a large site. An entry with `items` opens a small menu:
+
+```yaml title="docs.yml"
+nav:
+  - { label: Guides, link: /guides/writing-content/ }
+  - { label: Reference, link: /reference/configuration/ }
+  - label: "1.2"
+    items:
+      - { label: Releases, link: https://github.com/Laidwin/kiln/releases }
+```
+
+Links are site paths (the base path is added for you) or full URLs. On small screens, they move into the menu with the social icons.
+
 ## Language
 
 The interface (search, table of contents, navigation labels) is available in English and French:
@@ -91,3 +143,5 @@ Add an "Edit page" link at the bottom of every page, pointing to your repository
 ```yaml title="docs.yml"
 editLink: https://github.com/<owner>/<repo>/edit/main/
 ```
+
+Without `editLink`, as on this site, no page shows the link. To hide it on a single page only, add `editUrl: false` to its front matter.

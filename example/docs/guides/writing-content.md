@@ -59,6 +59,7 @@ Task list:
 ## Links
 
 - Internal link: [Getting started](/getting-started/)
+- Relative link to a file, as on GitHub: [Customizing](./customizing.md)
 - Link to an anchor: [the Tables section](#tables)
 - Link to a section on another page: [`docs.yml` options](/reference/configuration/#options)
 - External link: [Markdown Guide](https://www.markdownguide.org/)
@@ -68,3 +69,26 @@ Task list:
 A horizontal rule separates the sections above from this footnote[^1].
 
 [^1]: Footnotes are gathered at the end of the document.
+
+## Portable Markdown
+
+The same files read well on the site, on GitHub and in an editor:
+
+- **Relative links to files** such as `[Customizing](./customizing.md#fonts)` become links to the right page.
+- **GitHub alerts** become asides:
+
+  ```md
+  > [!TIP]
+  > Written like this on GitHub, shown as a tip here.
+  ```
+
+  `NOTE` and `IMPORTANT` give a note, `TIP` a tip, `WARNING` a caution and `CAUTION` a danger aside.
+- **A page without `title`** in its front matter takes its first `# Heading` as title, and that heading is not shown twice.
+
+Files that live outside `docs/`, such as `CHANGELOG.md`, are published with `include` in `docs.yml`:
+
+```yaml title="docs.yml"
+include:
+  - { file: CHANGELOG.md, slug: changelog }
+```
+
