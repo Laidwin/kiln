@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { z } from 'astro/zod';
 import { isMap, isSeq, LineCounter, parseDocument } from 'yaml';
 import { COLOR_NAMES, contrastProblems } from '@laidwin/kiln-theme/colors.mjs';
+import { OpenApiError, readOpenApi } from './openapi.mjs';
 
 export class ConfigError extends Error {
 	constructor(file, problems) {
@@ -103,10 +104,50 @@ const theme = z.strictObject(
 
 const apiReference = z.strictObject(
 	{
-		python: relativePath(),
+		python: relativePath().optional(),
 		exclude: z.array(nonEmpty(), { error: 'must be a list of module names, e.g. [my_package.internal]' }).optional(),
+		openapi: relativePath().optional(),
+		server: url().optional(),
 	},
-	{ error: 'must be a map, e.g. { python: api.json }' },
+	{ error: 'must be a map, e.g. { python: api.json } or { openapi: docs/openapi.yaml }' },
+);
+
+const fontFile = z.union(
+	[
+		relativePath(),
+		z.strictObject({
+			file: relativePath(),
+			weight: z.union([z.number(), z.string()], { error: 'must be a weight, e.g. 400 or "100 900"' }).optional(),
+			style: z.enum(['normal', 'italic'], { error: 'must be "normal" or "italic"' }).optional(),
+		}),
+	],
+	{ error: 'must be a .woff2 path, or { file, weight?, style? }' },
+);
+
+const fontRole = z.union([fontFile, z.array(fontFile)], {
+	error: 'must be a .woff2 path, or a list of files with their weight, e.g. [{ file: docs/assets/fonts/x-700.woff2, weight: 700 }]',
+});
+
+const fonts = z.strictObject(
+	{ body: fontRole.optional(), heading: fontRole.optional(), mono: fontRole.optional() },
+	{ error: 'must be a map with body, heading and/or mono fonts' },
+);
+
+const navLink = z.strictObject({ label: nonEmpty(), link: nonEmpty() });
+
+const navItem = z.union(
+	[navLink, z.strictObject({ label: nonEmpty(), items: z.array(navLink, { error: 'must be a list of { label, link }' }) })],
+	{ error: 'must be { label, link } or { label, items: [{ label, link }, ...] }' },
+);
+
+const includeEntry = z.strictObject(
+	{
+		file: relativePath(),
+		slug: z
+			.string({ error: 'must be a page path, e.g. "changelog"' })
+			.regex(/^[a-z0-9][a-z0-9\-_]*(?:\/[a-z0-9][a-z0-9\-_]*)*$/, 'must be a lowercase page path without extension or leading "/", e.g. "project/changelog"'),
+	},
+	{ error: 'must be a map { file, slug }, e.g. { file: CHANGELOG.md, slug: changelog }' },
 );
 
 const basePath = z
@@ -128,6 +169,10 @@ export const docsConfigSchema = z.strictObject(
 		poweredBy: z.boolean({ error: 'must be true or false' }).optional(),
 		theme: theme.optional(),
 		api: apiReference.optional(),
+		include: z.array(includeEntry, { error: 'must be a list of { file, slug }' }).optional(),
+		fonts: fonts.optional(),
+		css: relativePath().optional(),
+		nav: z.array(navItem, { error: 'must be a list of { label, link } or { label, items }' }).optional(),
 	},
 	{ error: 'docs.yml must contain a map of keys (title, description, …)' },
 );
@@ -237,7 +282,26 @@ export function loadDocsConfig(projectDir) {
 			message: `theme.${mode}: ${pair} has a contrast of ${ratio}:1, below the 4.5:1 needed to read it comfortably (WCAG AA). Darken or lighten one of the two colors.`,
 		});
 	}
-	if (config.api) {
+	if (config.api && !config.api.python && !config.api.openapi) {
+		problems.push({ line: lineFor(doc, lineCounter, ['api']), message: 'api: set python (a griffe dump) or openapi (an OpenAPI description)' });
+	}
+	if (config.api?.openapi) {
+		const line = lineFor(doc, lineCounter, ['api', 'openapi']);
+		const file = resolve(projectDir, config.api.openapi);
+		if (!existsSync(file)) problems.push({ line, message: `api.openapi: file not found "${config.api.openapi}" (path relative to docs.yml)` });
+		else {
+			try {
+				readOpenApi(file);
+			} catch (err) {
+				if (!(err instanceof OpenApiError)) throw err;
+				problems.push({ line, message: `api.openapi: ${config.api.openapi}: ${err.message}` });
+			}
+		}
+		if (existsSync(resolve(projectDir, 'api'))) {
+			problems.push({ line, message: 'api.openapi: an api/ folder also exists. Both are published under /api/: keep one of them.' });
+		}
+	}
+	if (config.api?.python) {
 		const line = lineFor(doc, lineCounter, ['api', 'python']);
 		if (!existsSync(resolve(projectDir, config.api.python))) {
 			problems.push({
@@ -252,6 +316,33 @@ export function loadDocsConfig(projectDir) {
 			});
 		}
 	}
+	for (const [role, entry] of Object.entries(config.fonts ?? {})) {
+		[entry].flat().forEach((f, i) => {
+			const file = typeof f === 'string' ? f : f.file;
+			const line = lineFor(doc, lineCounter, ['fonts', role]);
+			if (!/\.woff2$/i.test(file)) problems.push({ line, message: `fonts.${role}: "${file}" is not a .woff2 file (convert it with a tool such as fonttools or an online converter)` });
+			else if (!existsSync(resolve(projectDir, file))) problems.push({ line, message: `fonts.${role}: file not found "${file}" (path relative to docs.yml)` });
+		});
+	}
+	if (config.css) {
+		const line = lineFor(doc, lineCounter, ['css']);
+		if (!/\.css$/i.test(config.css)) problems.push({ line, message: `css: must be a .css file, got "${config.css}"` });
+		else if (!existsSync(resolve(projectDir, config.css))) problems.push({ line, message: `css: file not found "${config.css}" (path relative to docs.yml)` });
+	}
+	(config.nav ?? []).forEach((item, i) => {
+		for (const { link } of item.items ?? [item]) {
+			if (!link.startsWith('/') && !/^https?:\/\//.test(link)) {
+				problems.push({ line: lineFor(doc, lineCounter, ['nav', i]), message: `nav[${i}]: link "${link}" must be a site path starting with "/" (e.g. /guides/start/) or a full URL` });
+			}
+		}
+	});
+	(config.include ?? []).forEach(({ file, slug }, i) => {
+		const line = lineFor(doc, lineCounter, ['include', i]);
+		if (!/\.md$/i.test(file)) problems.push({ line, message: `include[${i}].file: must be a Markdown file (.md), got "${file}"` });
+		else if (!existsSync(resolve(projectDir, file))) problems.push({ line, message: `include[${i}].file: file not found "${file}" (path relative to docs.yml)` });
+		const clash = ['.md', '.mdx', '/index.md', '/index.mdx'].map((ext) => `docs/${slug}${ext}`).find((p) => existsSync(resolve(projectDir, p)));
+		if (clash) problems.push({ line, message: `include[${i}].slug: "${slug}" is already the page ${clash}. Choose another slug.` });
+	});
 	if (problems.length) throw new ConfigError('docs.yml', problems);
 
 	if (config.social && !Array.isArray(config.social)) {
