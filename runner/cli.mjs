@@ -181,8 +181,8 @@ const regenerate = (reason) => {
 	}
 };
 watchFile(join(projectDir, 'docs.yml'), { interval: 500 }, () => regenerate('docs.yml changed'));
-if (initial.api?.python) {
-	watchFile(resolve(projectDir, initial.api.python), { interval: 1000 }, () => regenerate(`${initial.api.python} changed`));
+for (const file of [initial.api?.python, initial.api?.openapi].filter(Boolean)) {
+	watchFile(resolve(projectDir, file), { interval: 1000 }, () => regenerate(`${file} changed`));
 }
 setInterval(() => {
 	const next = topLevelSignature(join(projectDir, 'docs'));

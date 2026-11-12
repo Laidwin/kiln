@@ -1,8 +1,9 @@
-import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { autoSidebar, toStarlightSidebar } from './sidebar.mjs';
 import { loadPythonApi } from './python-api.mjs';
+import { loadOpenApi } from './openapi.mjs';
 
 const UI = {
 	fr: { label: 'Français', api: 'Référence API' },
@@ -45,24 +46,65 @@ function writeIfChanged(file, content) {
 	writeFileSync(file, content);
 }
 
+const API_LABELS = {
+	en: { python: 'Python API', openapi: 'REST API' },
+	fr: { python: 'API Python', openapi: 'API REST' },
+};
+
 /**
- * Python API reference (docs.yml `api.python`): write the page model and add the /api/ routes,
- * or remove them when the option is not set.
+ * Generated API references (docs.yml `api.python` and/or `api.openapi`): write the page models and add
+ * the routes and their components, or remove them when the options are not set. Alone, a reference
+ * lives under /api/; with both, the Python one keeps /api/ and the OpenAPI one moves to /api/rest/.
+ * Returns the sidebar groups to add.
  */
-function preparePythonApi({ config, projectDir, appDir, base, locale }) {
+function prepareApi({ config, projectDir, appDir, base, locale }) {
 	const pagesDir = join(appDir, 'src', 'pages', 'api');
-	const componentsDir = join(appDir, 'src', 'components', 'kiln-api');
-	const modelFile = join(appDir, 'src', 'kiln-api.json');
-	if (!config.api?.python) {
-		for (const path of [pagesDir, componentsDir, modelFile]) rmSync(path, { recursive: true, force: true });
-		return null;
+	const kinds = {
+		python: { components: join(appDir, 'src', 'components', 'kiln-api'), model: join(appDir, 'src', 'kiln-api.json'), templates: join(import.meta.dirname, '..', 'api') },
+		openapi: { components: join(appDir, 'src', 'components', 'kiln-openapi'), model: join(appDir, 'src', 'kiln-openapi.json'), templates: join(import.meta.dirname, '..', 'openapi') },
+	};
+	const active = Object.keys(kinds).filter((kind) => config.api?.[kind]);
+	const both = active.length === 2;
+	const specDir = join(appDir, 'public', 'kiln-openapi');
+	for (const [name, k] of Object.entries(kinds)) {
+		if (!active.includes(name)) for (const path of [k.components, k.model]) rmSync(path, { recursive: true, force: true });
 	}
-	const model = loadPythonApi({ file: resolve(projectDir, config.api.python), exclude: config.api.exclude, base, locale });
-	const templates = join(import.meta.dirname, '..', 'api');
-	cpSync(join(templates, 'pages'), pagesDir, { recursive: true, filter: unchanged });
-	cpSync(join(templates, 'components'), componentsDir, { recursive: true, filter: unchanged });
-	writeIfChanged(modelFile, JSON.stringify({ pages: model.pages, labels: model.labels }));
-	return model;
+	if (!active.includes('openapi')) rmSync(specDir, { recursive: true, force: true });
+
+	// Pages of every reference share src/pages/api: start again when the set of references changes.
+	const marker = join(pagesDir, '.kiln-api');
+	if (!existsSync(marker) || readFileSync(marker, 'utf8') !== active.join('+')) rmSync(pagesDir, { recursive: true, force: true });
+	if (!active.length) return [];
+
+	const sidebar = [];
+	for (const kind of active) {
+		const k = kinds[kind];
+		const label = both ? (API_LABELS[locale] ?? API_LABELS.en)[kind] : undefined;
+		let model;
+		let routeDir = pagesDir;
+		if (kind === 'python') {
+			model = loadPythonApi({ file: resolve(projectDir, config.api.python), exclude: config.api.exclude, base, locale });
+			if (both && model.pages.some((p) => p.slug === 'rest' || p.slug?.startsWith('rest/'))) {
+				throw new Error('api: a Python package named "rest" collides with the REST API reference (/api/rest/) when api.openapi is also set. Exclude it or document the APIs separately.');
+			}
+			if (label) model.sidebar.label = label;
+		} else {
+			// The description itself is published too, for clients and code generators.
+			const spec = resolve(projectDir, config.api.openapi);
+			const specName = `openapi${extname(spec)}`;
+			if (existsSync(specDir)) for (const name of readdirSync(specDir)) if (name !== specName) rmSync(join(specDir, name));
+			copyIfChanged(spec, join(specDir, specName));
+			const root = both ? '/api/rest' : '/api';
+			if (both) routeDir = join(pagesDir, 'rest');
+			model = loadOpenApi({ file: spec, server: config.api.server, base, locale, specUrl: `/kiln-openapi/${specName}`, root, label });
+		}
+		cpSync(join(k.templates, 'pages'), routeDir, { recursive: true, filter: unchanged });
+		cpSync(join(k.templates, 'components'), k.components, { recursive: true, filter: unchanged });
+		writeIfChanged(k.model, JSON.stringify({ pages: model.pages, labels: model.labels }));
+		sidebar.push(model.sidebar);
+	}
+	writeIfChanged(marker, active.join('+'));
+	return sidebar;
 }
 
 function copyAsset(projectDir, appDir, relPath, name) {
@@ -106,8 +148,31 @@ export function prepareApp({ config, projectDir, appDir, templateDir, mode, poll
 	if (hasApi) {
 		sidebar.push({ label: UI[locale].api, link: '/api/', attrs: { 'data-api-link': '' } });
 	}
-	const pythonApi = preparePythonApi({ config, projectDir, appDir, base, locale });
-	if (pythonApi) sidebar.push(pythonApi.sidebar);
+	// Files published from outside docs/ (docs.yml `include`), read by src/content.config.ts.
+	const includes = (config.include ?? []).map(({ file, slug }) => ({
+		file: resolve(projectDir, file),
+		id: slug,
+		editUrl: config.editLink ? new URL(file, config.editLink.replace(/\/?$/, '/')).href : undefined,
+	}));
+	writeIfChanged(join(appDir, 'src', 'kiln-includes.json'), JSON.stringify(includes));
+
+	sidebar.push(...prepareApi({ config, projectDir, appDir, base, locale }));
+
+	// Project fonts (docs.yml `fonts`): copied to public/, served next to the site.
+	const fontsDir = join(appDir, 'public', 'kiln-fonts');
+	const fonts = {};
+	const fontNames = new Set();
+	for (const [role, entry] of Object.entries(config.fonts ?? {})) {
+		fonts[role] = [entry].flat().map((f, i) => {
+			const { file, weight, style } = typeof f === 'string' ? { file: f } : f;
+			const name = `${role}-${i}.woff2`;
+			fontNames.add(name);
+			copyIfChanged(resolve(projectDir, file), join(fontsDir, name));
+			return { url: `${base.replace(/\/$/, '')}/kiln-fonts/${name}`, weight, style };
+		});
+	}
+	// Remove fonts dropped from docs.yml, without touching the others (the dev watcher sees every write).
+	if (existsSync(fontsDir)) for (const name of readdirSync(fontsDir)) if (!fontNames.has(name)) rmSync(join(fontsDir, name));
 
 	const starlight = {
 		title: config.title,
@@ -145,7 +210,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import theme from '@laidwin/kiln-theme';
 import { satteri } from '@astrojs/markdown-satteri';
-import { baseLinks, accessibility } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, 'markdown-plugins.mjs')).href)};
+import { accessibility, baseLinks, githubAlerts, leadingTitle, relativePageLinks } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, 'markdown-plugins.mjs')).href)};
 import { apiIndex, onBuildWarning } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, 'vite-plugins.mjs')).href)};
 
 const astro = ${JSON.stringify(astro, null, '\t')};
@@ -156,11 +221,28 @@ astro.vite.build = { rollupOptions: { onwarn: onBuildWarning } };
 
 export default defineConfig({
 	...astro,
-	markdown: { processor: satteri({ hastPlugins: [baseLinks(astro.base), accessibility(${JSON.stringify(locale)})] }) },
+	markdown: {
+		processor: satteri({
+			mdastPlugins: [githubAlerts(${JSON.stringify(locale)})],
+			hastPlugins: [
+				relativePageLinks(${JSON.stringify([join(appDir, 'src', 'content', 'docs'), docsDir])}),
+				leadingTitle(),
+				baseLinks(astro.base),
+				accessibility(${JSON.stringify(locale)}),
+			],
+		}),
+	},
 	integrations: [
 		starlight({
 			...starlightConfig,
-			plugins: [theme(${JSON.stringify({ accent: config.accent, poweredBy: config.poweredBy, colors: config.theme })})],
+			plugins: [theme(${JSON.stringify({
+				accent: config.accent,
+				poweredBy: config.poweredBy,
+				colors: config.theme,
+				fonts,
+				css: config.css ? [resolve(projectDir, config.css)] : [],
+				nav: config.nav ?? [],
+			})})],
 		}),
 	],
 });

@@ -1,0 +1,67 @@
+---
+/**
+ * Fields of a schema, parameters or body: name, type, required, description, allowed values.
+ * Nested objects fold under a disclosure, like hosted API references.
+ */
+import Type from './Type.astro';
+
+interface Field {
+	name: string;
+	type: { text: string; link?: string; parts?: { text: string; link?: string }[] };
+	required?: boolean;
+	deprecated?: boolean;
+	readOnly?: boolean;
+	html?: string;
+	enum?: string[];
+	default?: string;
+	constraints?: string;
+	example?: unknown;
+	children?: Field[];
+}
+interface Props {
+	fields: Field[];
+	labels: Record<string, string>;
+	nested?: boolean;
+}
+
+const { fields, labels, nested = false } = Astro.props;
+---
+
+<ul class:list={['kiln-oa-fields', { nested }]}>
+	{
+		fields.map((f) => (
+			<li>
+				<div class="kiln-oa-field-head">
+					<code class="kiln-oa-field-name">{f.name}</code>
+					<Type type={f.type} />
+					{f.required && <span class="kiln-oa-required">{labels.required}</span>}
+					{f.deprecated && <span class="kiln-oa-flag">{labels.deprecated}</span>}
+				</div>
+				{f.html && <div class="kiln-oa-field-desc" set:html={f.html} />}
+				{(f.enum || f.default || f.constraints) && (
+					<p class="kiln-oa-field-meta">
+						{f.enum && (
+							<span>
+								{labels.allowed}: <Fragment set:html={f.enum.map((v) => `<code>${v.replace(/</g, '&lt;')}</code>`).join(', ')} />
+							</span>
+						)}
+						{f.default && (
+							<span>
+								{labels.default}: <code>{f.default}</code>
+							</span>
+						)}
+						{f.constraints && <span>{f.constraints}</span>}
+					</p>
+				)}
+				{f.children && f.children.length > 0 && (
+					<details class="kiln-oa-children">
+						<summary>
+							{labels.fields} · {f.children.length}
+						</summary>
+						<Astro.self fields={f.children} labels={labels} nested />
+					</details>
+				)}
+			</li>
+		))
+	}
+</ul>

@@ -1,0 +1,12 @@
+---
+/** Docstring content: prose as HTML, code blocks with Expressive Code like the rest of the site. */
+import { Code } from '@astrojs/starlight/components';
+
+interface Props {
+	parts: Array<{ html?: string; code?: string; lang?: string }>;
+}
+
+const { parts } = Astro.props;
+---
+
+{parts.map((part) => (part.code !== undefined ? <Code code={part.code} lang={part.lang} /> : <Fragment set:html={part.html} />))}
