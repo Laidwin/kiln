@@ -1,0 +1,368 @@
+openapi: 3.1.0
+info:
+  title: Pottery Studio API
+  version: 2.3.0
+  description: |
+    A sample REST API, used by Kiln's documentation to show the reference it renders from an OpenAPI
+    description. It drives the kilns of an imaginary pottery studio and reuses the vocabulary of the
+    [`pottery`](/api/pottery/) Python package.
+
+    - **Format**: JSON in and out; temperatures in degrees Celsius, durations in minutes, dates in
+      RFC 3339.
+    - **Pagination**: list operations take `limit` and `cursor`, and return a `next` cursor while more
+      items remain.
+
+    ## Errors
+
+    Errors share one shape, with a stable `code` for programs and a `message` for humans:
+
+    ```json
+    { "error": { "code": "kiln_busy", "message": "Kiln 2 is already firing." } }
+    ```
+
+    | Code | Status | Meaning |
+    | --- | --- | --- |
+    | `invalid_schedule` | 400 | A segment goes beyond the clay body's maximum temperature |
+    | `unauthorized` | 401 | The token is missing or revoked |
+    | `not_found` | 404 | No such kiln, firing or glaze |
+    | `kiln_busy` | 409 | The kiln is already firing |
+servers:
+  - url: https://studio.example.com/v2
+    description: Production
+security:
+  - token: []
+tags:
+  - name: kilns
+    x-displayName: Kilns
+    description: The kilns of the studio and their state.
+  - name: firings
+    x-displayName: Firings
+    description: Start, follow and cancel firings, each made of heating segments.
+  - name: glazes
+    x-displayName: Glazes
+    description: Glaze recipes and the batches to weigh out.
+  - name: studio
+    x-displayName: Studio
+    description: Health of the service.
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [studio]
+      summary: Check the service
+      description: Answers as long as the service runs. Needs no token, for monitoring.
+      security: []
+      responses:
+        "200":
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  version: { type: string, example: 2.3.0 }
+
+  /kilns:
+    get:
+      operationId: listKilns
+      tags: [kilns]
+      summary: List the kilns
+      parameters:
+        - name: state
+          in: query
+          description: Only the kilns in this state.
+          schema: { $ref: "#/components/schemas/KilnState" }
+      responses:
+        "200":
+          description: Every kiln of the studio.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Kiln" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /kilns/{kilnId}:
+    parameters:
+      - $ref: "#/components/parameters/KilnId"
+    get:
+      operationId: getKiln
+      tags: [kilns]
+      summary: Get a kiln
+      description: The kiln, its current temperature and the firing it runs, if any.
+      responses:
+        "200":
+          description: The kiln.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Kiln" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /firings:
+    get:
+      operationId: listFirings
+      tags: [firings]
+      summary: List the firings
+      description: The most recent firings first.
+      parameters:
+        - name: kiln
+          in: query
+          description: Only the firings of this kiln.
+          schema: { type: integer, example: 2 }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: A page of firings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Firing" }
+                  next:
+                    type: [string, "null"]
+                    description: Cursor of the next page, `null` on the last one.
+                    example: eyJpZCI6MTJ9
+    post:
+      operationId: startFiring
+      tags: [firings]
+      summary: Start a firing
+      description: |
+        Loads a schedule into a kiln and starts it. The schedule is checked against the clay body first:
+        no segment may go beyond its maximum temperature.
+
+        The firing runs on its own; follow it with [Get a firing](/api/rest/firings/get-firing/).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewFiring" }
+            example:
+              kiln: 2
+              clay: stoneware
+              schedule:
+                name: Glaze firing
+                segments:
+                  - { rate: 150, to: 600, hold: 0 }
+                  - { rate: 100, to: 1240, hold: 15 }
+      responses:
+        "201":
+          description: The firing has started.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Firing" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /firings/{firingId}:
+    parameters:
+      - name: firingId
+        in: path
+        required: true
+        description: Identifier of the firing.
+        schema: { type: string, example: f_7Hq2 }
+    get:
+      operationId: getFiring
+      tags: [firings]
+      summary: Get a firing
+      responses:
+        "200":
+          description: The firing, with its progress.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Firing" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: cancelFiring
+      tags: [firings]
+      summary: Cancel a firing
+      description: Stops heating at once; the kiln cools down on its own. A finished firing cannot be cancelled.
+      responses:
+        "204": { description: The firing is cancelled. }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /glazes:
+    get:
+      operationId: listGlazes
+      tags: [glazes]
+      summary: List the glazes
+      parameters:
+        - name: cone
+          in: query
+          description: Only the glazes that mature at this cone.
+          schema: { type: string, example: "6" }
+      responses:
+        "200":
+          description: The glazes of the studio.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Glaze" }
+
+  /glazes/{glazeId}/batch:
+    post:
+      operationId: mixBatch
+      tags: [glazes]
+      summary: Weigh out a batch
+      description: Scales the recipe of a glaze to a batch of the given dry weight.
+      parameters:
+        - name: glazeId
+          in: path
+          required: true
+          schema: { type: string, example: celadon }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grams]
+              properties:
+                grams: { type: number, minimum: 1, maximum: 50000, description: Dry weight of the batch, example: 2500 }
+                precision: { type: integer, minimum: 0, maximum: 3, default: 1, description: Decimals kept in each weight }
+      responses:
+        "200":
+          description: The weight of each material, in grams.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: { type: number }
+              example: { Potash feldspar: 1000, Silica: 625, Whiting: 500, Kaolin: 375, Red iron oxide: 37.5 }
+        "404": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    token:
+      type: http
+      scheme: bearer
+      description: A studio token, created in the studio settings. Send it in the `Authorization` header.
+
+  parameters:
+    KilnId:
+      name: kilnId
+      in: path
+      required: true
+      description: Number of the kiln.
+      schema: { type: integer, example: 2 }
+    Limit:
+      name: limit
+      in: query
+      description: Items per page.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
+      in: query
+      description: The `next` cursor of the previous page.
+      schema: { type: string }
+
+  responses:
+    Error:
+      description: The request failed; see the code.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    KilnState:
+      type: string
+      description: What a kiln is doing.
+      enum: [idle, heating, holding, cooling, maintenance]
+
+    Kiln:
+      type: object
+      required: [id, name, state, temperature]
+      properties:
+        id: { type: integer, example: 2 }
+        name: { type: string, example: Big electric }
+        state: { $ref: "#/components/schemas/KilnState" }
+        temperature: { type: integer, description: Current temperature, example: 864 }
+        maxTemperature: { type: integer, description: Highest temperature the kiln can reach, example: 1300 }
+        firing:
+          type: [string, "null"]
+          description: Identifier of the firing in progress, if any.
+          example: f_7Hq2
+
+    Segment:
+      type: object
+      description: One step of a schedule, like `pottery.firing.Segment`.
+      required: [rate, to]
+      properties:
+        rate: { type: integer, description: Heating rate in degrees per hour, example: 100 }
+        to: { type: integer, description: Target temperature, example: 1240 }
+        hold: { type: integer, description: Minutes held at the target, default: 0 }
+
+    Schedule:
+      type: object
+      required: [segments]
+      properties:
+        name: { type: string, example: Glaze firing }
+        segments:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/Segment" }
+
+    NewFiring:
+      type: object
+      required: [kiln, clay, schedule]
+      properties:
+        kiln: { type: integer, description: Number of the kiln to fire, example: 2 }
+        clay:
+          type: string
+          description: Clay body of the ware, which bounds the peak temperature.
+          enum: [earthenware, stoneware, porcelain]
+        schedule: { $ref: "#/components/schemas/Schedule" }
+
+    Firing:
+      type: object
+      required: [id, kiln, state, schedule]
+      properties:
+        id: { type: string, example: f_7Hq2 }
+        kiln: { type: integer, example: 2 }
+        clay: { type: string, example: stoneware }
+        state:
+          type: string
+          enum: [running, finished, cancelled, failed]
+        schedule: { $ref: "#/components/schemas/Schedule" }
+        progress:
+          type: object
+          description: Where the firing stands.
+          properties:
+            segment: { type: integer, description: Index of the current segment, from 0, example: 1 }
+            temperature: { type: integer, example: 864 }
+            minutesLeft: { type: integer, example: 312 }
+        cone: { type: string, description: Pyrometric cone of the peak temperature, example: "6" }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: [string, "null"], format: date-time }
+
+    Glaze:
+      type: object
+      required: [id, name, recipe]
+      properties:
+        id: { type: string, example: celadon }
+        name: { type: string, example: Celadon }
+        cone: { type: string, example: "10" }
+        recipe:
+          type: object
+          description: Parts by weight of each material.
+          additionalProperties: { type: number }
+          example: { Potash feldspar: 40, Silica: 25, Whiting: 20, Kaolin: 15, Red iron oxide: 1.5 }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: kiln_busy }
+            message: { type: string, example: Kiln 2 is already firing. }
