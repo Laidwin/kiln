@@ -9,6 +9,7 @@
  * Without JavaScript, the fallback stack is used.
  */
 import Default from '@astrojs/starlight/components/Head.astro';
+import kiln from 'virtual:kiln-theme/config';
 import fontUrl from '../fonts/inter-kiln.woff2?url';
 
 const font = {
@@ -19,6 +20,8 @@ const font = {
 ---
 
 <Default />
+{/* A project body font (docs.yml `fonts.body`) replaces Inter: nothing to load then. */}
+{!kiln.customBody && (
 <script is:inline define:vars={{ font }}>
 	(() => {
 		const key = 'kiln-font';
@@ -43,3 +46,4 @@ const font = {
 		else addEventListener('load', load, { once: true });
 	})();
 </script>
+)}
